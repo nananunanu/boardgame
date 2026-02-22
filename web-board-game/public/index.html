@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Board Game - Alpha</title>
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; background: #f0f0f0; font-family: sans-serif; }
+        #game-container { position: relative; margin-top: 20px; }
+        canvas { background: #fff; border: 2px solid #333; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #ui-layer { margin-top: 15px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+        button:disabled { background: #ccc; }
+        #status { margin-bottom: 10px; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="status">게임 접속 대기 중...</div>
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <div id="ui-layer">
+        <button id="roll-btn" disabled>주사위 굴리기</button>
+        <p id="result-textText">결과: -</p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
