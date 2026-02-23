@@ -9,6 +9,7 @@ const io = new Server(server);
 let players = {}; // { socketId: { name: "닉네임", position: 0, color: "#hex" } }
 let playerOrder = []; // "실제 게임 중인" 유저들의 ID 순서
 let currentTurnIndex = 0;
+let taxPool = 50; // 누적된 사회복지기금
 
 // 클라이언트 정적 파일 제공 (public 폴더 내의 파일들)
 app.use(express.static('public'));
@@ -36,7 +37,7 @@ const mapInfo = [
     { name: "취리히", price: 380, type: "land", owner: null },
     { name: "세계여행", price: 0, type: "special" }, // 17번 칸 (모서리)
 
-    { name: "시드니", price: 420, type: "land", owner: null },
+    { name: "국세청", price: 0, type: "special", owner: null },
     { name: "토론토", price: 420, type: "land", owner: null },
     { name: "로스앤젤레스", price: 450, type: "land", owner: null },
     { name: "화성", price: 500, type: "land", owner: null },
@@ -138,11 +139,35 @@ io.on('connection', (socket) => {
                 player.money = 0;
                 handleBankruptcy(socket.id);
             }
-        } else if (finalPos === 6) {  // ★ 6번 칸 무인도 도착 체크
+        } 
+        else if (finalPos === 6) {  // ★ 6번 칸 무인도 도착 체크
             player.lockedTurns = 3; // 3턴 동안 이동 불가
             io.emit('game-log', `🚨 [사건] ${player.name}님이 무인도에 표류되었습니다! (3턴간 이동 불가)`);
+        } 
+        else if (finalPos === 11) {// 11번 칸: 기금 수령
+            if (taxPool > 0) {
+            player.money += taxPool;
+            io.emit('game-log', `🎉 [대박] ${player.name}님이 사회복지기금 ${taxPool}만원을 모두 수령했습니다!`);
+            taxPool = 0; // 수령 후 초기화
+            } else {
+                io.emit('game-log', `😊 ${player.name}님이 사회복지기금 칸에 방문했지만, 쌓인 기금이 없습니다.`);
+            }
+        }
+        else if (finalPos === 18) { //  18번칸: 국세청 (기금적립)
+            const tax = 150; // 세금 금액
+            if (player.money >= tax) {
+                player.money -= tax;
+                taxPool += tax;
+                io.emit('game-log', `💸 [납세] ${player.name}님이 국세청에서 세금 ${tax}만원을 납부했습니다. (기금에 적립됨)`);
+            } else {
+                // 돈이 부족하면 파산 대신 남은 돈만이라도 징수 (혹은 파산 처리 가능)
+                taxPool += player.money;
+                player.money = 0;
+                io.emit('game-log', `💸 [징수] ${player.name}님이 잔액이 부족하여 남은 자산을 세금으로 납부했습니다.`);
+            }
         }
         io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
+        io.emit('update-taxpool', taxPool); // 사회복지기구 현 기금상태 업데이트
     });
 
     // 2. 땅 구매 요청 처리
@@ -162,7 +187,21 @@ io.on('connection', (socket) => {
             console.log(`${player.name}님이 ${land.name}을 구매했습니다.`);
         }
     });
-
+    // [server.js] 텔레포트 요청 처리 추가
+    socket.on('teleport-request', (targetIndex) => {
+        const player = players[socket.id];
+        // 현재 위치가 세계일주(17번)이고, 본인 턴일 때만 허용
+        if (player && player.position === 17) {
+            player.position = targetIndex;
+            
+            io.emit('game-log', `✈️ ${player.name}님이 세계일주를 통해 ${mapInfo[targetIndex].name}(으)로 이동했습니다!`);
+            io.emit('update-players', players);
+            
+            // 이동한 곳의 로직(땅 구매 등)을 위해 move-complete 호출
+            // (직접 호출하거나 클라이언트에서 다시 신호를 보내도록 설계)
+            io.emit('teleport-complete', { playerId: socket.id, targetIndex });
+        }
+    });
     socket.on('disconnect', () => {
         if (players[socket.id]) {
             const name = players[socket.id].name;
@@ -185,7 +224,9 @@ function handleBankruptcy(socketId) {
     if (!player) return;
 
     // 파산한 본인에게 알림창을 띄우라고 신호 보냄
-    io.emit('player-bankrupt', socketId);
+    setTimeout(() => {
+        io.emit('player-bankrupt', socketId);
+    }, 2000)
 
     console.log(`[파산] ${player.name}님이 파산하였습니다.`);
     io.emit('game-log', `📢 ${player.name}님이 자금 부족으로 파산하였습니다!`);
@@ -215,7 +256,9 @@ function handleBankruptcy(socketId) {
     if (playerOrder.length === 1) {
         const winner = players[playerOrder[0]];
         io.emit('game-log', `🏆 게임 종료! 승리자: ${winner.name}`);
-        io.emit('player-winner', playerOrder[0]);
+        setTimeout(() => {
+            io.emit('player-winner', playerOrder[0]);
+        }, 2000)
         // 필요 시 게임 리셋 로직 추가
     } else {
         io.emit('turn-change', playerOrder[currentTurnIndex]);

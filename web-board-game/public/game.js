@@ -20,6 +20,24 @@ document.getElementById('start-btn').onclick = function() {
 rollBtn.onclick = () => {
     socket.emit('roll-dice');
 };
+canvas.addEventListener('click', (event) => {
+    if (!isTeleporting) return;
+
+    // 클릭한 좌표를 타일 인덱스로 변환
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const x = (event.clientX - rect.left) * (canvas.width / rect.width) / dpr;
+    const y = (event.clientY - rect.top) * (canvas.height / rect.height) / dpr;
+
+    mapData.forEach((tile, index) => {
+        if (x >= tile.x && x <= tile.x + TILE_W &&
+            y >= tile.y && y <= tile.y + TILE_H) {
+            
+            isTeleporting = false;
+            socket.emit('teleport-request', index);
+        }
+    });
+});
 // 1. 직사각형 설정을 위한 변수 분리
 let COL_COUNT = 9;  // 가로 칸 수
 let ROW_COUNT = 5;  // 세로 칸 수
@@ -32,6 +50,12 @@ let players = {};
 let isMoving = false; // 현재 애니메이션 진행 중인지 체크
 let currentTurnId = ""; // 현재 누구 턴인지 기억할 변수 추가
 let currentMap = []; // 서버에서 받은 맵 데이터를 저장할 변수
+
+//사회복지기금
+let currentTaxPool = 0;
+
+//세계일주
+let isTeleporting = false;
 
 const ENABLE = false;
 const DISABLE = true;
@@ -120,6 +144,23 @@ function render() {
             ctx.font = `bold ${priceFontSize}px sans-serif`;
             ctx.fillText(`[${info.ownerName}]`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.85);
         }
+
+        if (index === 11) {
+            ctx.fillStyle = "#e67e22"; // 강조색
+            ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+            ctx.fillText(`기금: ${currentTaxPool}만`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.7);
+        }
+
+        if (index === 18) {
+            ctx.fillStyle = "#c0392b";
+            ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+            ctx.fillText(`세금: 150만`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.7);
+        }
+        if (isTeleporting) {
+            ctx.strokeStyle = "rgba(241, 196, 15, 0.5)";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(tile.x + 5, tile.y + 5, TILE_W - 10, TILE_H - 10);
+        }
     });
 
     Object.keys(players).forEach(id => {
@@ -199,8 +240,11 @@ resizeCanvas();
 //========================================================================================socket========================================================================================
 socket.on('update-map', (serverMap) => {
     currentMap = serverMap;
-    render();
-    
+    render(); 
+});
+socket.on('update-taxpool', (pool) => {
+    currentTaxPool = pool;
+    render(); // 기금 액수가 바뀌면 화면 다시 그리기
 });
 
 // 서버로부터 플레이어 전체 정보를 동기화
@@ -223,6 +267,8 @@ socket.on('game-log', (msg) => {
 // 서버로부터 주사위 결과 수신 및 이동 로직
 socket.on('dice-result', async (data) => { // async : "이 함수는 언제 끝날지 모르는 작업(비동기)을 포함하고 있으니, 기다려줄 준비를 해라"**라고 표시하는 키워드
     const { playerId, value } = data;
+    
+
     resultText.innerText = `결과: ${value} (${players[playerId].name}님)`;
 
     isMoving = true;
@@ -232,11 +278,18 @@ socket.on('dice-result', async (data) => { // async : "이 함수는 언제 끝�
         await moveOneStep(playerId); // async 과 await는 세트이다 await뒤에 오는 함수는 반드시 Promise를 반환해야 함.("작업이 끝나면 나중에 꼭 알려주겠다는 약속")
     }
     isMoving = false;
-
+    
+    const myFinalPos = players[playerId].position;
+    
+    if (myFinalPos === 17 && socket.id === data.playerId) {
+        isTeleporting = true;
+        statusText.innerText = "✈️ 세계일주! 이동할 칸을 클릭하세요.";
+        statusText.style.color = "#f1c40f";
+    }
+    
     // ★ 이동 종료 후 땅 구매 체크 로직 추가
-    // ★ 추가: 애니메이션 종료 후 서버에 최종 위치 보고
     if (socket.id === playerId) { // 내 말일 때만 팝업 띄움
-        const myFinalPos = players[playerId].position;
+        
         socket.emit('move-complete', myFinalPos);
 
         const land = currentMap[myFinalPos];
@@ -247,7 +300,7 @@ socket.on('dice-result', async (data) => { // async : "이 함수는 언제 끝�
                 }
             }, 300)
         } else {
-            resultText.innerText = `돈이 부족하여 땅을 구매하실 수 없습니다.`;
+            //resultText.innerText = `돈이 부족하여 땅을 구매하실 수 없습니다.`;
         }
     }
     // ★ 핵심 수정: 애니메이션이 끝난 후, 내 턴이라면 버튼을 활성화함
