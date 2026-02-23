@@ -75,13 +75,28 @@ io.on('connection', (socket) => {
         const activeId = playerOrder[currentTurnIndex];
         if (socket.id !== activeId || !players[activeId]) return;
 
+        const player = players[activeId];
         const diceValue = Math.floor(Math.random() * 6) + 1;
+
+        // 이전 위치 저장
+        const oldPos = player.position;
+        // 새 위치 계산 (24칸 기준)
+        const newPos = (oldPos + diceValue) % 24;
+
         // 핵심: 서버에서 결과를 계산하여 모두에게 방송(Broadcast)
         io.emit('dice-result', { 
             playerId: socket.id, 
             value: diceValue, 
             name: players[socket.id].name // 이름 추가 전송
         });
+
+        // 월급 체크: 새 위치가 이전 위치보다 숫자가 작아졌다면 한 바퀴를 돌았다는 뜻!
+        // (단, 0번 칸에 딱 멈추는 경우도 포함)
+        if (newPos < oldPos || (oldPos + diceValue >= 24)) {
+            const salary = 200; // 월급 금액
+            player.money += salary;
+            io.emit('game-log', `💰 ${player.name}님이 한 바퀴를 완주하여 월급 ${salary}만원을 받았습니다!`);
+        }
 
         // 턴 교대 알고리즘: (현재인덱스 + 1) % 전체인원
         currentTurnIndex = (currentTurnIndex + 1) % playerOrder.length;
