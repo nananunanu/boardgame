@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
             name: username, 
             position: 0, 
             color: color, 
-            money: 300 // 시작 자금 1000만원 설정
+            money: 1000 // 시작 자금 1000만원 설정
         };
         playerOrder.push(socket.id);
 
