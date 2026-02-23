@@ -2,42 +2,130 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Web Board Game - Alpha</title>
     <style>
-        body { display: flex; flex-direction: column; align-items: center; background: #f0f0f0; font-family: sans-serif; }
-        #game-container { position: relative; margin-top: 20px; }
-        canvas { background: #fff; border: 2px solid #333; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        #ui-layer { margin-top: 15px; text-align: center; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
-        button:disabled { background: #ccc; }
-        #status { margin-bottom: 10px; font-weight: bold; color: #333; }
+        :root {
+            --bg-color: #2c3e50;
+            --board-bg: #ecf0f1;
+            --accent-color: #e74c3c;
+        }
+
+        body { 
+            margin: 0; padding: 0; 
+            background: var(--bg-color); 
+            display: flex; justify-content: center; align-items: center;
+            height: 100dvh; overflow: hidden; font-family: 'Pretendard', sans-serif;
+        }
+
+        #game-container { position: relative; display: flex; align-items: center; justify-content: center; }
+
+        canvas { 
+            background: var(--board-bg); 
+            border: 3px solid #34495e; 
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* 보드 중앙 내부 UI */
+        #inner-ui {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%; /* 11x11 보드 중앙 빈 공간에 맞춤 */
+            max-height: 55%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* 클릭 방해 금지 */
+        }
+
+        #leaderboard {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            pointer-events: auto; /* 리더보드는 스크롤 가능하게 */
+            overflow-y: auto;
+        }
+
+        #player-table { 
+            width: 100%; border-collapse: collapse; 
+            font-size: clamp(12px, 2.5vh, 16px); /* 화면 높이에 따라 폰트 조절 */
+        }
+        
+        #player-table th { border-bottom: 2px solid #ddd; padding: 12px 5px; color: #333; }
+        #player-table td { padding: 12px 5px; text-align: center; }
+
+        /* 상태 메시지 및 결과 텍스트 */
+        #status {
+            position: absolute; top: 25%; left:14%; font-weight: bold;
+            background: rgba(0,0,0,0.6); color: white;
+            padding: 5px 15px; border-radius: 20px; font-size: 14px;
+        }
+
+        #result-textText {
+            margin-top: 10px; font-size: 13px; color: #fff;
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px;
+        }
+
+        /* 플로팅 주사위 버튼 */
+        #roll-btn {
+            position: absolute; bottom: 25%; right: 15%;
+            width: 100px; height: 100px; border-radius: 50%;
+            font-size: 24px; background: var(--accent-color); border: 3px solid #fff;
+            color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        #roll-btn:disabled { background: #7f8c8d; opacity: 0.7; }
+
+        /* 모바일 가로모드 최적화: 주사위 버튼 위치 조정 */
+        @media (max-height: 500px) {
+            #roll-btn { width: 70px; height: 70px; font-size: 20px; }
+            #inner-ui { width: 65%; }
+        }
     </style>
 </head>
 <body>
+    <div id="start-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+    <h2>Web Board Game</h2>
+    <button id="start-btn" style="width: 200px; padding: 20px; background: #2ecc71; border: none; border-radius: 10px; font-size: 20px; color: white; cursor: pointer;">게임 시작</button>
+    <p style="margin-top: 15px; font-size: 14px; color: #aaa;">모바일은 가로 모드로 플레이하세요!</p>
+    </div>
 
     <div id="game-container">
-        <div id="status">게임 접속 대기 중...</div>
-        <canvas id="gameCanvas" width="500" height="500"></canvas>
-    </div>
+        <canvas id="gameCanvas"></canvas>
 
-    <div id="ui-layer">
-        <button id="roll-btn" disabled>주사위 굴리기</button>
-        <p id="result-textText">결과: -</p>
-    </div>
+        <div id="status">대기 중...</div>
+        <div id="inner-ui">
+            
+            
+            <div id="leaderboard">
+                <table id="player-table">
+                    <thead>
+                        <tr>
+                            <th>이름</th>
+                            <th>잔액</th>
+                            <th>자산</th>
+                        </tr>
+                    </thead>
+                    <tbody id="player-list"></tbody>
+                </table>
+            </div>
+            
+            <p id="result-textText">주사위를 굴려주세요!</p>
+        </div>
 
-   <div id="leaderboard" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; width: 500px;">
-        <h3>💰 플레이어 현황</h3>
-        <table id="player-table" style="width: 100%; text-align: left;">
-            <thead>
-                <tr>
-                    <th>플레이어</th>
-                    <th>잔액</th>
-                    <th>보유 자산</th>
-                    <th>위치</th>
-                </tr>
-            </thead>
-            <tbody id="player-list"></tbody>
-        </table>
+        <button id="roll-btn" disabled>🎲</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

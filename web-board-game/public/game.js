@@ -4,31 +4,75 @@ const ctx = canvas.getContext('2d');
 const statusText = document.getElementById('status');
 const rollBtn = document.getElementById('roll-btn');
 const resultText = document.getElementById('result-textText');
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log("서비스 워커 등록 완료"));
+}
 
-// 보드판 설정 (간단한 사각형 경로)
-const BOARD_SIZE = 500;
-const TILE_COUNT = 16; // 5x5 형태의 외곽 순환 (4+4+4+4)
-const TILE_SIZE = BOARD_SIZE / 5;
-
-const ENABLE = false;
-const DISABLE = true;
-
-// 각 칸의 좌표를 미리 계산 (시계방향)
+// 1. 직사각형 설정을 위한 변수 분리
+let COL_COUNT = 9;  // 가로 칸 수
+let ROW_COUNT = 5;  // 세로 칸 수
+let TILE_W = 0;     // 동적으로 계산될 가로 너비
+let TILE_H = 0;     // 동적으로 계산될 세로 높이
 const mapData = [];
-for (let i = 0; i < 5; i++) mapData.push({ x: i * TILE_SIZE, y: 0 }); // 상단
-for (let i = 1; i < 5; i++) mapData.push({ x: 4 * TILE_SIZE, y: i * TILE_SIZE }); // 우측
-for (let i = 3; i >= 0; i--) mapData.push({ x: i * TILE_SIZE, y: 4 * TILE_SIZE }); // 하단
-for (let i = 3; i >= 1; i--) mapData.push({ x: 0, y: i * TILE_SIZE }); // 좌측
-
-// 접속 시 이름 입력받기
-const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-socket.emit('join-game', myName);
 
 // 플레이어 상태 관리
 let players = {}; 
 let isMoving = false; // 현재 애니메이션 진행 중인지 체크
 let currentTurnId = ""; // 현재 누구 턴인지 기억할 변수 추가
 let currentMap = []; // 서버에서 받은 맵 데이터를 저장할 변수
+
+const ENABLE = false;
+const DISABLE = true;
+
+// 2. 직사각형 좌표 계산 함수 (시계 방향)
+function updateMapData() {
+    mapData.length = 0; 
+    // 상단 (왼쪽 -> 오른쪽)
+    for (let i = 0; i < COL_COUNT - 1; i++) mapData.push({ x: i * TILE_W, y: 0 });
+    // 우측 (위 -> 아래)
+    for (let i = 0; i < ROW_COUNT - 1; i++) mapData.push({ x: (COL_COUNT - 1) * TILE_W, y: i * TILE_H });
+    // 하단 (오른쪽 -> 왼쪽)
+    for (let i = COL_COUNT - 1; i > 0; i--) mapData.push({ x: i * TILE_W, y: (ROW_COUNT - 1) * TILE_H });
+    // 좌측 (아래 -> 위)
+    for (let i = ROW_COUNT - 1; i > 0; i--) mapData.push({ x: 0, y: i * TILE_H });
+}
+
+function resizeCanvas() {
+    // 1. 기기의 픽셀 비율(DPR) 가져오기 (보통 모바일은 2~3)
+    const dpr = window.devicePixelRatio || 1;
+    
+    // 2. 화면에 보여질 논리적 크기 설정
+    const logicalWidth = window.innerWidth - 20;
+    const logicalHeight = window.innerHeight - 20;
+
+    // 3. 실제 캔버스의 내부 해상도(픽셀 수)를 비율만큼 확대
+    canvas.width = logicalWidth * dpr;
+    canvas.height = logicalHeight * dpr;
+
+    // 4. 브라우저에 보이는 실제 크기는 원래대로 고정 (CSS 스타일)
+    canvas.style.width = logicalWidth + 'px';
+    canvas.style.height = logicalHeight + 'px';
+
+    // 5. 모든 그리기 작업에 dpr 배율 적용
+    ctx.scale(dpr, dpr);
+
+    // 6. 타일 크기 계산 (논리적 크기 기준)
+    TILE_W = logicalWidth / COL_COUNT;
+    TILE_H = logicalHeight / ROW_COUNT;
+
+    updateMapData();
+    render();
+}
+
+// 3. 이벤트 리스너 등록 및 초기 실행
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+// 접속 시 이름 입력받기
+const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
+socket.emit('join-game', myName);
+
+
 
 socket.on('update-map', (serverMap) => {
     currentMap = serverMap;
@@ -134,7 +178,7 @@ socket.on('turn-change', (activePlayerId) => {
             rollBtn.disabled = ENABLE;
         }
         statusText.innerText = "당신의 차례입니다.";
-        statusText.style.color = "blue";
+        statusText.style.color = "#6cd668";
     } else {
         rollBtn.disabled = DISABLE;
         const opponentName = players[activePlayerId] ? players[activePlayerId].name : "상대방";
@@ -147,63 +191,76 @@ socket.on('turn-change', (activePlayerId) => {
 // 렌더링 함수 (View)
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    
+    // 캔버스의 텍스트가 더 부드럽게 그려지도록 설정
+    ctx.textBaseline = "middle"; // 세로 정렬 기준을 중간으로
+    ctx.imageSmoothingEnabled = true; // 이미지 스무딩 활성화
+    
+    ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
 
-    // 보드판 배경 및 도시 이름 그리기
+
+    // 폰트 크기는 세로 높이(TILE_H) 기준으로 맞추는 것이 안전합니다.
+    const nameFontSize = Math.floor(TILE_H * 0.18);
+    const priceFontSize = Math.floor(TILE_H * 0.15);
+
     mapData.forEach((tile, index) => {
-        const info = currentMap[index] || { name: "로딩중...", price: 0 };
+        const info = currentMap[index] || { name: "...", price: 0 };
 
-        // 1. 소유주가 있다면 칸에 색깔을 칠함
         if (info.owner) {
-            ctx.fillStyle = players[info.owner] ? players[info.owner].color + '44' : '#eee'; // 투명도 추가
-            ctx.fillRect(tile.x, tile.y, TILE_SIZE, TILE_SIZE);
+            ctx.fillStyle = players[info.owner] ? players[info.owner].color + '33' : '#eee';
+            ctx.fillRect(tile.x, tile.y, TILE_W, TILE_H);
         }
 
         ctx.strokeStyle = '#333';
-        ctx.strokeRect(tile.x, tile.y, TILE_SIZE, TILE_SIZE);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tile.x, tile.y, TILE_W, TILE_H);
         
-        ctx.fillStyle = '#000';
-        ctx.font = "bold 12px Arial";
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = `bold ${nameFontSize}px sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText(info.name, tile.x + TILE_SIZE / 2, tile.y + 25);
+        // 위치를 TILE_W, TILE_H에 맞춰 조정
+        ctx.fillText(info.name, tile.x + TILE_W / 2, tile.y + TILE_H * 0.3);
 
-        // ★ 가격 표시 추가 ★
         if (info.type === "land") {
-            ctx.font = "10px Arial";
-            ctx.fillStyle = "blue"; // 가격은 파란색으로 구분해볼까요?
-            ctx.fillText(`${info.price}만원`, tile.x + TILE_SIZE / 2, tile.y + 45);
+            ctx.font = `${priceFontSize}px sans-serif`;
+            ctx.fillStyle = "#2980b9";
+            ctx.fillText(`${info.price}만`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.55);
         }
-
-        // 주인 이름 표시
+        
         if (info.ownerName) {
-            ctx.fillStyle = "red";
-            ctx.fillText(`[${info.ownerName}]`, tile.x + TILE_SIZE / 2, tile.y + 60);
+            ctx.fillStyle = "#c0392b";
+            ctx.font = `bold ${priceFontSize}px sans-serif`;
+            ctx.fillText(`[${info.ownerName}]`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.85);
         }
     });
 
-    // 플레이어 말과 이름 그리기
     Object.keys(players).forEach(id => {
         const p = players[id];
         const pos = mapData[p.position];
-        if (!pos) return; // 혹시 모를 에러 방지
+        if (!pos) return;
 
-        // 말 그리기
+        // 말 크기는 가로/세로 중 작은 쪽 기준으로 설정
+        const pieceRadius = Math.min(TILE_W, TILE_H) * 0.25;
+
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(pos.x + TILE_SIZE/2, pos.y + TILE_SIZE/2, 15, 0, Math.PI * 2);
+        ctx.arc(pos.x + TILE_W/2, pos.y + TILE_H/2, pieceRadius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // 이름 그리기
-        ctx.fillStyle = "black";
-        ctx.font = "bold 12px Arial";
-        ctx.textAlign = "center";
-
-        // 이름 옆이나 아래에 돈을 표시합니다.
-        // \`${p.name} (${p.money}만)\` 형태로 출력
-        ctx.fillText(`${p.name} (${p.money}만)`, pos.x + TILE_SIZE/2, pos.y + TILE_SIZE/2 - 25);
+        ctx.fillStyle = "#000";
+        ctx.font = `bold ${Math.floor(pieceRadius * 0.8)}px sans-serif`;
+        ctx.fillText(p.name, pos.x + TILE_W/2, pos.y + TILE_H/2 - pieceRadius - 5);
     });
 }
+document.getElementById('start-btn').onclick = function() {
 
+    document.getElementById('start-overlay').style.display = 'none';
+};
 // 주사위 버튼 이벤트
 rollBtn.onclick = () => {
     socket.emit('roll-dice');

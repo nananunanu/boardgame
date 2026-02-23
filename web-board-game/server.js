@@ -10,23 +10,36 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 // game.js 상단
+
+// server.js 의 mapInfo를 24칸으로 교체
 const mapInfo = [
     { name: "출발지", price: 0, type: "start" },
-    { name: "서울", price: 10, type: "land", owner: null },
-    { name: "도쿄", price: 20, type: "land", owner: null },
-    { name: "시드니", price: 30, type: "land", owner: null },
-    { name: "무인도", price: 40, type: "special" }, // 4번 칸
-    { name: "런던", price: 50, type: "land", owner: null },
-    { name: "파리", price: 60, type: "land", owner: null },
-    { name: "베이징", price: 70, type: "land", owner: null },
-    { name: "찬스", price: 0, type: "special" }, // 8번 칸
-    { name: "베를린", price: 80, type: "land", owner: null },
-    { name: "로마", price: 90, type: "land", owner: null },
-    { name: "방콕", price: 100, type: "land", owner: null },
-    { name: "세계여행", price: 0, type: "special" }, // 12번 칸
-    { name: "마드리드", price: 110, type: "land", owner: null },
-    { name: "카이로", price: 120, type: "land", owner: null },
-    { name: "뉴욕", price: 130, type: "land", owner: null }
+    { name: "타이베이", price: 50, type: "land", owner: null },
+    { name: "베이징", price: 60, type: "land", owner: null },
+    { name: "제주도", price: 80, type: "land", owner: null },
+    { name: "싱가포르", price: 100, type: "land", owner: null },
+    { name: "방콕", price: 110, type: "land", owner: null },
+    { name: "무인도", price: 0, type: "special" }, // 6번 칸 (모서리)
+
+    { name: "독도", price: 200, type: "land", owner: null },
+    { name: "마드리드", price: 220, type: "land", owner: null },
+    { name: "아테네", price: 230, type: "land", owner: null },
+    { name: "로마", price: 250, type: "land", owner: null },
+    { name: "사회복지", price: 0, type: "special" }, // 11번 칸 (모서리)
+
+    { name: "베를린", price: 280, type: "land", owner: null },
+    { name: "부산", price: 320, type: "land", owner: null },
+    { name: "파리", price: 350, type: "land", owner: null },
+    { name: "런던", price: 350, type: "land", owner: null },
+    { name: "취리히", price: 380, type: "land", owner: null },
+    { name: "세계여행", price: 0, type: "special" }, // 17번 칸 (모서리)
+
+    { name: "시드니", price: 420, type: "land", owner: null },
+    { name: "토론토", price: 420, type: "land", owner: null },
+    { name: "로스앤젤레스", price: 450, type: "land", owner: null },
+    { name: "화성", price: 500, type: "land", owner: null },
+    { name: "찬스", price: 0, type: "special" },
+    { name: "뉴욕", price: 600, type: "land", owner: null }  // 23번 칸
 ];
 
 let players = {}; // { socketId: { name: "닉네임", position: 0, color: "#hex" } }
