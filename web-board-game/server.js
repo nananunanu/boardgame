@@ -6,11 +6,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+let players = {}; // { socketId: { name: "닉네임", position: 0, color: "#hex" } }
+let playerOrder = []; // "실제 게임 중인" 유저들의 ID 순서
+let currentTurnIndex = 0;
+
 // 클라이언트 정적 파일 제공 (public 폴더 내의 파일들)
 app.use(express.static('public'));
-
-// game.js 상단
-
+//========================================================================================map========================================================================================
 // server.js 의 mapInfo를 24칸으로 교체
 const mapInfo = [
     { name: "출발지", price: 0, type: "start" },
@@ -42,10 +44,7 @@ const mapInfo = [
     { name: "뉴욕", price: 600, type: "land", owner: null }  // 23번 칸
 ];
 
-let players = {}; // { socketId: { name: "닉네임", position: 0, color: "#hex" } }
-let playerOrder = []; // "실제 게임 중인" 유저들의 ID 순서
-let currentTurnIndex = 0;
-
+//========================================================================================socket========================================================================================
 io.on('connection', (socket) => {
     // 1. 단순 접속 시에는 아무것도 하지 않고 대기 (이름 입력 전까지)
 
@@ -57,7 +56,7 @@ io.on('connection', (socket) => {
             name: username, 
             position: 0, 
             color: color, 
-            money: 1000 // 시작 자금 1000만원 설정
+            money: 300 // 시작 자금 1000만원 설정
         };
         playerOrder.push(socket.id);
 
@@ -72,7 +71,9 @@ io.on('connection', (socket) => {
     
     // 주사위 굴리기 요청 처리
     socket.on('roll-dice', () => {
-        if (socket.id !== playerOrder[currentTurnIndex]) return;
+        // 현재 턴인 사람의 ID가 실제 존재하는지 확인
+        const activeId = playerOrder[currentTurnIndex];
+        if (socket.id !== activeId || !players[activeId]) return;
 
         const diceValue = Math.floor(Math.random() * 6) + 1;
         // 핵심: 서버에서 결과를 계산하여 모두에게 방송(Broadcast)
@@ -108,12 +109,10 @@ io.on('connection', (socket) => {
                 // 파산 처리 (잔액 0원)
                 owner.money += player.money
                 player.money = 0;
-                io.emit('game-log', `${player.name}님이 파산 위기입니다!`);
+                handleBankruptcy(socket.id);
             }
         }
-
-        // 변경된 상태(돈, 위치)를 모두에게 알림
-        io.emit('update-players', players);
+        io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
     });
 
     // 2. 땅 구매 요청 처리
@@ -147,7 +146,50 @@ io.on('connection', (socket) => {
         }
     });
 });
+//========================================================================================socket========================================================================================
 
+//========================================================================================function========================================================================================
+// server.js 하단에 추가
+function handleBankruptcy(socketId) {
+    const player = players[socketId];
+    if (!player) return;
+
+    console.log(`[파산] ${player.name}님이 파산하였습니다.`);
+    io.emit('game-log', `📢 ${player.name}님이 자금 부족으로 파산하였습니다!`);
+
+    // 1. 소유했던 모든 땅 초기화
+    mapInfo.forEach(tile => {
+        if (tile.owner === socketId) {
+            tile.owner = null;
+            tile.ownerName = null;
+        }
+    });
+
+    // 2. 플레이어 목록 및 순서에서 제거
+    delete players[socketId];
+    playerOrder = playerOrder.filter(id => id !== socketId);
+
+    // 3. 턴 인덱스 보정 (사람이 줄었으므로 현재 인덱스가 범위를 넘지 않게)
+    if (currentTurnIndex >= playerOrder.length) {
+        currentTurnIndex = 0;
+    }
+
+    // 4. 정보 갱신 방송
+    io.emit('update-players', players);
+    io.emit('update-map', mapInfo);
+    
+    // 5. 남은 인원 체크 (게임 종료 조건)
+    if (playerOrder.length === 1) {
+        const winner = players[playerOrder[0]];
+        io.emit('game-log', `🏆 게임 종료! 승리자: ${winner.name}`);
+        // 필요 시 게임 리셋 로직 추가
+    } else {
+        io.emit('turn-change', playerOrder[currentTurnIndex]);
+    }
+}
+//========================================================================================function========================================================================================
+
+//========================================================================================server========================================================================================
 const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
