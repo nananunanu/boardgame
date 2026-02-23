@@ -127,8 +127,13 @@ function render() {
         const pos = mapData[p.position];
         if (!pos) return;
 
+        // 무인도 상태면 캐릭터를 약간 반투명하게 하거나 그림자를 뺌
+        const displayName = p.lockedTurns > 0 ? `🏝️ ${p.name}` : p.name;
+        ctx.globalAlpha = p.lockedTurns > 0 ? 0.5 : 1.0;
+
         // 말 크기는 가로/세로 중 작은 쪽 기준으로 설정
         const pieceRadius = Math.min(TILE_W, TILE_H) * 0.25;
+
 
         ctx.shadowBlur = 5;
         ctx.shadowColor = "rgba(0,0,0,0.3)";
@@ -141,7 +146,11 @@ function render() {
 
         ctx.fillStyle = "#000";
         ctx.font = `bold ${Math.floor(pieceRadius * 0.8)}px sans-serif`;
-        ctx.fillText(p.name, pos.x + TILE_W/2, pos.y + TILE_H/2 - pieceRadius - 5);
+        
+        ctx.fillText(displayName, pos.x + TILE_W/2, pos.y + TILE_H/2 - pieceRadius - 5); //말에 이름 나타내기
+
+        
+        ctx.globalAlpha = 1.0; // 복구
     });
 }
 // 초기 렌더링
@@ -157,12 +166,13 @@ function updateLeaderboard() {
         
         // 현재 내 턴인지 확인해서 강조 표시
         const isMyTurn = (id === currentTurnId) ? "⭐" : "";
-        
+        const statusTag = p.lockedTurns > 0 ? ` 🏝️(${p.lockedTurns})` : "";
+
         // 내가 소유한 땅의 개수 계산
         const landCount = currentMap.filter(tile => tile.owner === id).length;
 
         row.innerHTML = `
-            <td style="color: ${p.color}; font-weight: bold;">${isMyTurn} ${p.name}</td>
+            <td style="color: ${p.color}; font-weight: bold;">${isMyTurn} ${p.name}${statusTag}</td>
             <td>${p.money}만원</td>
             <td>${landCount}곳</td>
             <td>${currentMap[p.position] ? currentMap[p.position].name : "출발지"}</td>
@@ -264,6 +274,25 @@ socket.on('turn-change', (activePlayerId) => {
         statusText.style.color = "red";
     }
     updateLeaderboard();
+});
+
+socket.on('player-bankrupt', (targetId) => { //파산 로직
+    if (socket.id === targetId) {
+        const overlay = document.getElementById('bankruptcy-overlay');
+        overlay.style.display = 'flex'; // 모달 표시
+        
+        // 내 조작 버튼들 비활성화
+        rollBtn.disabled = DISABLE;
+    }
+});
+socket.on('player-winner', (targetId) => { //파산 로직
+    if (socket.id === targetId) {
+        const overlay = document.getElementById('winner-overlay');
+        overlay.style.display = 'flex'; // 모달 표시
+        
+        // 내 조작 버튼들 비활성화
+        rollBtn.disabled = DISABLE;
+    }
 });
 //================================================================================================================================================================================
 

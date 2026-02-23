@@ -56,7 +56,8 @@ io.on('connection', (socket) => {
             name: username, 
             position: 0, 
             color: color, 
-            money: 1000 // 시작 자금 1000만원 설정
+            money: 1000, // 시작 자금 1000만원 설정
+            lockedTurns: 0
         };
         playerOrder.push(socket.id);
 
@@ -82,6 +83,17 @@ io.on('connection', (socket) => {
         const oldPos = player.position;
         // 새 위치 계산 (24칸 기준)
         const newPos = (oldPos + diceValue) % 24;
+
+        if (player.lockedTurns > 0) {
+            player.lockedTurns--;
+            io.emit('game-log', `🏝️ ${player.name}님은 무인도에 갇혀 있습니다. (남은 턴: ${player.lockedTurns})`);
+            
+            // 주사위를 굴리지 않고 바로 다음 사람에게 턴을 넘김
+            currentTurnIndex = (currentTurnIndex + 1) % playerOrder.length;
+            io.emit('turn-change', playerOrder[currentTurnIndex]);
+            io.emit('update-players', players); // 턴 수 감소 반영
+            return;
+        }   
 
         // 핵심: 서버에서 결과를 계산하여 모두에게 방송(Broadcast)
         io.emit('dice-result', { 
@@ -126,6 +138,9 @@ io.on('connection', (socket) => {
                 player.money = 0;
                 handleBankruptcy(socket.id);
             }
+        } else if (finalPos === 6) {  // ★ 6번 칸 무인도 도착 체크
+            player.lockedTurns = 3; // 3턴 동안 이동 불가
+            io.emit('game-log', `🚨 [사건] ${player.name}님이 무인도에 표류되었습니다! (3턴간 이동 불가)`);
         }
         io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
     });
@@ -169,6 +184,9 @@ function handleBankruptcy(socketId) {
     const player = players[socketId];
     if (!player) return;
 
+    // 파산한 본인에게 알림창을 띄우라고 신호 보냄
+    io.emit('player-bankrupt', socketId);
+
     console.log(`[파산] ${player.name}님이 파산하였습니다.`);
     io.emit('game-log', `📢 ${player.name}님이 자금 부족으로 파산하였습니다!`);
 
@@ -197,6 +215,7 @@ function handleBankruptcy(socketId) {
     if (playerOrder.length === 1) {
         const winner = players[playerOrder[0]];
         io.emit('game-log', `🏆 게임 종료! 승리자: ${winner.name}`);
+        io.emit('player-winner', playerOrder[0]);
         // 필요 시 게임 리셋 로직 추가
     } else {
         io.emit('turn-change', playerOrder[currentTurnIndex]);

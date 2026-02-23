@@ -129,6 +129,18 @@
         <button id="roll-btn" disabled>🎲</button>
     </div>
 
+    <div id="bankruptcy-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;">
+        <h1 style="font-size: 50px; color: #e74c3c; margin-bottom: 10px;">BANKRUPT</h1>
+        <p id="bankrupt-msg" style="font-size: 18px; margin-bottom: 30px;">자금이 부족하여 파산하였습니다.</p>
+        <button onclick="location.reload()" style="padding: 15px 30px; background: #3498db; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 16px;">처음으로 돌아가기</button>
+    </div>
+
+    <div id="winner-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;">
+        <h1 style="font-size: 50px; color: #a5e73c; margin-bottom: 10px;">WIN</h1>
+        <p id="winner-msg" style="font-size: 18px; margin-bottom: 30px;">게임에서 승리하였습니다.</p>
+        <button onclick="location.reload()" style="padding: 15px 30px; background: #3498db; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 16px;">처음으로 돌아가기</button>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
 </body>
