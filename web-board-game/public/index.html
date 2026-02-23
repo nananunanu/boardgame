@@ -25,6 +25,21 @@
         <p id="result-textText">결과: -</p>
     </div>
 
+   <div id="leaderboard" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; width: 500px;">
+        <h3>💰 플레이어 현황</h3>
+        <table id="player-table" style="width: 100%; text-align: left;">
+            <thead>
+                <tr>
+                    <th>플레이어</th>
+                    <th>잔액</th>
+                    <th>보유 자산</th>
+                    <th>위치</th>
+                </tr>
+            </thead>
+            <tbody id="player-list"></tbody>
+        </table>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
 </body>
