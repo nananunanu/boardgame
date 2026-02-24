@@ -117,57 +117,7 @@ io.on('connection', (socket) => {
     });
     
     socket.on('move-complete', (finalPos) => {
-        const player = players[socket.id];
-        if (!player) return;
-
-        player.position = finalPos; // 실제 위치 업데이트
-        const land = mapInfo[finalPos];
-
-        // ★ 통행료 지불 체크 ★
-        if (land.type === 'land' && land.owner && land.owner !== socket.id) {
-            const owner = players[land.owner];
-            const fee = Math.floor(land.price * 0.5); // 땅값의 50%를 통행료로 설정
-
-            if (player.money >= fee) {
-                player.money -= fee;
-                owner.money += fee;
-                // 모든 유저에게 누가 누구에게 얼마 줬는지 알림
-                io.emit('game-log', `${player.name}님이 ${owner.name}님의 땅(${land.name})에 도착하여 통행료 ${fee}만원을 지불했습니다.`);
-            } else {
-                // 파산 처리 (잔액 0원)
-                owner.money += player.money
-                player.money = 0;
-                handleBankruptcy(socket.id);
-            }
-        } 
-        else if (finalPos === 6) {  // ★ 6번 칸 무인도 도착 체크
-            player.lockedTurns = 3; // 3턴 동안 이동 불가
-            io.emit('game-log', `🚨 [사건] ${player.name}님이 무인도에 표류되었습니다! (3턴간 이동 불가)`);
-        } 
-        else if (finalPos === 11) {// 11번 칸: 기금 수령
-            if (taxPool > 0) {
-            player.money += taxPool;
-            io.emit('game-log', `🎉 [대박] ${player.name}님이 사회복지기금 ${taxPool}만원을 모두 수령했습니다!`);
-            taxPool = 0; // 수령 후 초기화
-            } else {
-                io.emit('game-log', `😊 ${player.name}님이 사회복지기금 칸에 방문했지만, 쌓인 기금이 없습니다.`);
-            }
-        }
-        else if (finalPos === 18) { //  18번칸: 국세청 (기금적립)
-            const tax = 150; // 세금 금액
-            if (player.money >= tax) {
-                player.money -= tax;
-                taxPool += tax;
-                io.emit('game-log', `💸 [납세] ${player.name}님이 국세청에서 세금 ${tax}만원을 납부했습니다. (기금에 적립됨)`);
-            } else {
-                // 돈이 부족하면 파산 대신 남은 돈만이라도 징수 (혹은 파산 처리 가능)
-                taxPool += player.money;
-                player.money = 0;
-                io.emit('game-log', `💸 [징수] ${player.name}님이 잔액이 부족하여 남은 자산을 세금으로 납부했습니다.`);
-            }
-        }
-        io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
-        io.emit('update-taxpool', taxPool); // 사회복지기구 현 기금상태 업데이트
+        handleMoveComplete(socket, finalPos);
     });
 
     // 2. 땅 구매 요청 처리
@@ -195,11 +145,8 @@ io.on('connection', (socket) => {
             player.position = targetIndex;
             
             io.emit('game-log', `✈️ ${player.name}님이 세계일주를 통해 ${mapInfo[targetIndex].name}(으)로 이동했습니다!`);
-            io.emit('update-players', players);
             
-            // 이동한 곳의 로직(땅 구매 등)을 위해 move-complete 호출
-            // (직접 호출하거나 클라이언트에서 다시 신호를 보내도록 설계)
-            io.emit('teleport-complete', { playerId: socket.id, targetIndex });
+            handleMoveComplete(socket, targetIndex);
         }
     });
     socket.on('disconnect', () => {
@@ -219,6 +166,67 @@ io.on('connection', (socket) => {
 
 //========================================================================================function========================================================================================
 // server.js 하단에 추가
+function handleMoveComplete(socket, finalPos) {
+            const player = players[socket.id];
+        if (!player) return;
+
+        player.position = finalPos; // 실제 위치 업데이트
+        const land = mapInfo[finalPos];
+
+        // ★ 통행료 지불 체크 ★
+        if (land.type === 'land' && land.owner && land.owner !== socket.id) {
+            const owner = players[land.owner];
+            const fee = Math.floor(land.price * 0.5); // 땅값의 50%를 통행료로 설정
+
+            if (player.money >= fee) {
+                player.money -= fee;
+                owner.money += fee;
+                // 모든 유저에게 누가 누구에게 얼마 줬는지 알림
+                io.emit('game-log', `${player.name}님이 ${owner.name}님의 땅(${land.name})에 도착하여 통행료 ${fee}만원을 지불했습니다.`);
+            } else {
+                // 파산 처리 (잔액 0원)
+                owner.money += player.money
+                player.money = 0;
+                handleBankruptcy(socket.id);
+            }
+        }
+        else if (land.type === 'land' && !land.owner && player.money >= land.price) {
+            // 클라이언트에게 "구매 의사"를 물어보라고 신호를 보냄
+            socket.emit('ask-buy-land', { index: finalPos, name: land.name, price: land.price });
+        }
+        else if (finalPos === 6) {  // ★ 6번 칸 무인도 도착 체크
+            player.lockedTurns = 3; // 3턴 동안 이동 불가
+            io.emit('game-log', `🚨 [사건] ${player.name}님이 무인도에 표류되었습니다! (3턴간 이동 불가)`);
+        } 
+        else if (finalPos === 11) {// 11번 칸: 기금 수령
+            if (taxPool > 0) {
+            player.money += taxPool;
+            io.emit('game-log', `🎉 [대박] ${player.name}님이 사회복지기금 ${taxPool}만원을 모두 수령했습니다!`);
+            taxPool = 0; // 수령 후 초기화
+            } else {
+                io.emit('game-log', `😊 ${player.name}님이 사회복지기금 칸에 방문했지만, 쌓인 기금이 없습니다.`);
+            }
+        }
+        else if (finalPos === 17) {
+            socket.emit('start-teleport');
+            io.emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
+        }
+        else if (finalPos === 18) { //  18번칸: 국세청 (기금적립)
+            const tax = 150; // 세금 금액
+            if (player.money >= tax) {
+                player.money -= tax;
+                taxPool += tax;
+                io.emit('game-log', `💸 [납세] ${player.name}님이 국세청에서 세금 ${tax}만원을 납부했습니다. (기금에 적립됨)`);
+            } else {
+                // 돈이 부족하면 파산 대신 남은 돈만이라도 징수 (혹은 파산 처리 가능)
+                taxPool += player.money;
+                player.money = 0;
+                io.emit('game-log', `💸 [징수] ${player.name}님이 잔액이 부족하여 남은 자산을 세금으로 납부했습니다.`);
+            }
+        }
+        io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
+        io.emit('update-taxpool', taxPool); // 사회복지기구 현 기금상태 업데이트
+}
 function handleBankruptcy(socketId) {
     const player = players[socketId];
     if (!player) return;

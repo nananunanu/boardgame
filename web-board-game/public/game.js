@@ -52,7 +52,7 @@ let currentTurnId = ""; // 현재 누구 턴인지 기억할 변수 추가
 let currentMap = []; // 서버에서 받은 맵 데이터를 저장할 변수
 
 //사회복지기금
-let currentTaxPool = 0;
+let currentTaxPool = 50;
 
 //세계일주
 let isTeleporting = false;
@@ -280,33 +280,34 @@ socket.on('dice-result', async (data) => { // async : "이 함수는 언제 끝�
     isMoving = false;
     
     const myFinalPos = players[playerId].position;
-    
-    if (myFinalPos === 17 && socket.id === data.playerId) {
-        isTeleporting = true;
-        statusText.innerText = "✈️ 세계일주! 이동할 칸을 클릭하세요.";
-        statusText.style.color = "#f1c40f";
-    }
-    
-    // ★ 이동 종료 후 땅 구매 체크 로직 추가
-    if (socket.id === playerId) { // 내 말일 때만 팝업 띄움
-        
-        socket.emit('move-complete', myFinalPos);
 
-        const land = currentMap[myFinalPos];
-        if (land.type === 'land' && !land.owner && land.price <= players[playerId].money) {
-            setTimeout(() => {
-                if (confirm(`${land.name}(${land.price}만원)을 구매하시겠습니까?`)) {
-                socket.emit('buy-land', myFinalPos);
-                }
-            }, 300)
-        } else {
-            //resultText.innerText = `돈이 부족하여 땅을 구매하실 수 없습니다.`;
-        }
-    }
+
+    
+    // ★ 이동 종료
+    if (socket.id === playerId) { // 내 말일 때만 팝업 띄움
+        socket.emit('move-complete', myFinalPos);
+    }   
     // ★ 핵심 수정: 애니메이션이 끝난 후, 내 턴이라면 버튼을 활성화함
     if (socket.id === currentTurnId) {
         rollBtn.disabled = ENABLE;
     }
+});
+
+socket.on('start-teleport', () => {
+    isTeleporting = true;
+    statusText.innerText = "✈️ 세계일주! 이동할 칸을 클릭하세요.";
+    statusText.style.color = "#f1c40f";
+    // 렌더링을 호출하여 캔버스에 선택 가이드(노란 테두리 등)를 표시
+    render(); 
+});
+
+socket.on('ask-buy-land', (data) => {
+    // 서버가 물어볼 때만 팝업을 띄움
+    setTimeout(() => {
+        if (confirm(`${data.name}(${data.price}만원)을 구매하시겠습니까?`)) {
+            socket.emit('buy-land', data.index);
+        }
+    }, 300);
 });
 
 socket.on('turn-change', (activePlayerId) => {
