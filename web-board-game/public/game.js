@@ -458,7 +458,7 @@ socket.on('update-taxpool', (pool) => {
 socket.on('update-players', (serverPlayers) => {
     players = serverPlayers;
     render();
-    updateLeaderboard(); // 현황판 갱신 함수 호출
+    //updateLeaderboard(); // 현황판 갱신 함수 호출
     updatePersonalUI()
 });
 
