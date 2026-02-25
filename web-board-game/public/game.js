@@ -60,6 +60,16 @@ let isTeleporting = false;
 const ENABLE = false;
 const DISABLE = true;
 
+let diceAnim = {
+    active: false,
+    showResult: false, // 결과 주사위를 화면에 띄워둘 것인가?
+    value: 1,
+    frame: 0,
+    maxFrame: 40, // 애니메이션 지속 시간 (프레임)
+    yOffset: 0,   // 점프 높이
+    rotation: 0   // 회전 각도
+};
+
 //========================================================================================render==================================================================================
 // 2. 직사각형 좌표 계산 함수 (시계 방향)
 function updateMapData() {
@@ -117,8 +127,8 @@ function updateMapData() {
 
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    const logicalWidth = window.innerWidth - 20;
-    const logicalHeight = window.innerHeight - 20;
+    const logicalWidth = window.innerWidth - 0; //타일 크기 조정 상수
+    const logicalHeight = window.innerHeight - 0;
 
     canvas.width = logicalWidth * dpr;
     canvas.height = logicalHeight * dpr;
@@ -128,8 +138,8 @@ function resizeCanvas() {
 
     // 정사각형 다이아몬드 배치를 위해 타일 크기 최적화
     // 전체 맵 너비가 화면 너비의 90% 정도 차지하도록 설정
-    TILE_W = (logicalWidth * 0.6) / (COL_COUNT - 1);
-    TILE_H = TILE_W * 0.6; // 3D 느낌을 위해 가로세로 비율 조정 (0.5~0.6 추천)
+    TILE_W = (logicalWidth * 0.7) / (COL_COUNT - 1);
+    TILE_H = TILE_W * 0.5; // 3D 느낌을 위해 가로세로 비율 조정 (0.5~0.6 추천)
 
     updateMapData();
     render();
@@ -235,6 +245,57 @@ function drawMahjongTile(tile, info, index) {
         ctx.stroke();
     }
 }
+function draw3DDice(ctx, x, y, size, value, rotation, yOffset) {
+    ctx.save();
+    ctx.translate(x, y - yOffset);
+    ctx.rotate(rotation);
+
+    const s = size / 2;
+    const skew = s * 0.5; // 입체 깊이감
+
+    // 1. 상단 면 (Top Face) - 위로 솟아오른 모양
+    ctx.fillStyle = "#ecf0f1"; // 가장 밝은 면
+    ctx.beginPath();
+    ctx.moveTo(-s, -s);
+    ctx.lineTo(-s + skew, -s - skew); // 왼쪽 위로
+    ctx.lineTo(s + skew, -s - skew);  // 오른쪽 위로
+    ctx.lineTo(s, -s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 2. 우측 면 (Right Face) - 위쪽 대각선으로 연결
+    ctx.fillStyle = "#bdc3c7"; // 중간 어두운 면
+    ctx.beginPath();
+    ctx.moveTo(s, -s);
+    ctx.lineTo(s + skew, -s - skew); // 위쪽 대각선 방향으로 수정
+    ctx.lineTo(s + skew, s - skew);  // 아래쪽도 평행하게 수정
+    ctx.lineTo(s, s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 3. 정면 (Front Face) - 기준이 되는 면
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(-s, -s, size, size);
+    ctx.strokeRect(-s, -s, size, size);
+
+    // 4. 주사위 눈 (Front Face에만 그림)
+    ctx.fillStyle = value === 1 ? "#e74c3c" : "#2c3e50";
+    const dotR = size * 0.1;
+    const drawDot = (dx, dy) => {
+        ctx.beginPath();
+        ctx.arc(dx, dy, dotR, 0, Math.PI * 2);
+        ctx.fill();
+    };
+
+    if (value % 2 === 1) drawDot(0, 0);
+    if (value > 1) { drawDot(-s/2, -s/2); drawDot(s/2, s/2); }
+    if (value > 3) { drawDot(s/2, -s/2); drawDot(-s/2, s/2); }
+    if (value === 6) { drawDot(-s/2, 0); drawDot(s/2, 0); }
+
+    ctx.restore();
+}
 
 function render() {
     const dpr = window.devicePixelRatio || 1;
@@ -287,6 +348,23 @@ function render() {
         ctx.fillText(displayName, centerX, centerY - pieceRadius - 10);
         
         ctx.globalAlpha = 1.0;
+
+
+        // 주사위 애니메이션이 활성 상태일 때만 중앙에 그림
+        if (diceAnim.showResult) {
+        const dpr = window.devicePixelRatio || 1;
+        const centerX = (canvas.width / dpr) / 2;
+        const centerY = (canvas.height / dpr) / 2;
+        
+        // 주사위 그림자 (바닥에 고정)
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + 20, 30 + (diceAnim.yOffset * 0.1), 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3D 주사위 본체
+        draw3DDice(ctx, centerX, centerY, 60, diceAnim.value, diceAnim.rotation, diceAnim.yOffset);
+        }
     });
 }
 // 초기 렌더링
@@ -360,33 +438,63 @@ socket.on('game-log', (msg) => {
 });
 
 // 서버로부터 주사위 결과 수신 및 이동 로직
-socket.on('dice-result', async (data) => { // async : "이 함수는 언제 끝날지 모르는 작업(비동기)을 포함하고 있으니, 기다려줄 준비를 해라"**라고 표시하는 키워드
+socket.on('dice-result',  (data) => { // async : "이 함수는 언제 끝날지 모르는 작업(비동기)을 포함하고 있으니, 기다려줄 준비를 해라"**라고 표시하는 키워드
     const { playerId, value } = data;
     
+    // 애니메이션 설정 시작
+    diceAnim.active = true;
+    diceAnim.showResult = true; // 결과 표시 모드 ON
+    diceAnim.value = value;
+    diceAnim.frame = 0;
 
-    resultText.innerText = `결과: ${value} (${players[playerId].name}님)`;
+    function animateDice() {
+        if (diceAnim.frame < diceAnim.maxFrame) {
+            diceAnim.frame++;
+            
+            // 점프 곡선 (이차함수 사용)
+            const progress = diceAnim.frame / diceAnim.maxFrame;
+            diceAnim.yOffset = Math.sin(progress * Math.PI) * 150; // 최대 150px 높이 점프
+            diceAnim.rotation += 0.3; // 회전 속도
+            
+            // 애니메이션 중엔 임의의 숫자 표시
+            if (diceAnim.frame % 3 === 0) diceAnim.value = Math.floor(Math.random() * 6) + 1;
+            
+            render(); 
+            requestAnimationFrame(animateDice);
+        } else {
+            // 애니메이션 종료 후 실제 값 설정 및 이동 시작
+            diceAnim.active = false; // 애니메이션은 끝남
+            diceAnim.yOffset = 0; // 바닥에 착지
+            diceAnim.rotation = 0; // 정방향으로 멈춤
+            diceAnim.value = value; // 최종 값 고정
+            
+            
+            render(); // 착지한 모습 갱신
+            startMove(playerId, value); // 기존 이동 로직 호출
+        }
+    }
+    animateDice();
+    //resultText.innerText = `결과: ${value} (${players[playerId].name}님)`;
+});
 
+async function startMove(playerId, value) {
     isMoving = true;
-    rollBtn.disabled = DISABLE; 
-
+    rollBtn.disabled = DISABLE;
+    
     for (let i = 0; i < value; i++) {
         await moveOneStep(playerId); // async 과 await는 세트이다 await뒤에 오는 함수는 반드시 Promise를 반환해야 함.("작업이 끝나면 나중에 꼭 알려주겠다는 약속")
     }
     isMoving = false;
-    
-    const myFinalPos = players[playerId].position;
 
-
-    
     // ★ 이동 종료
     if (socket.id === playerId) { // 내 말일 때만 팝업 띄움
-        socket.emit('move-complete', myFinalPos);
+        socket.emit('move-complete', players[playerId].position);
     }   
     // ★ 핵심 수정: 애니메이션이 끝난 후, 내 턴이라면 버튼을 활성화함
     if (socket.id === currentTurnId) {
         rollBtn.disabled = ENABLE;
     }
-});
+}
 
 socket.on('start-teleport', () => {
     isTeleporting = true;
