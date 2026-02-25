@@ -39,8 +39,8 @@ canvas.addEventListener('click', (event) => {
     });
 });
 // 1. 직사각형 설정을 위한 변수 분리
-let COL_COUNT = 9;  // 가로 칸 수
-let ROW_COUNT = 5;  // 세로 칸 수
+let COL_COUNT = 8;  // 가로 칸 수
+let ROW_COUNT = 8;  // 세로 칸 수
 let TILE_W = 0;     // 동적으로 계산될 가로 너비
 let TILE_H = 0;     // 동적으로 계산될 세로 높이
 const mapData = [];
@@ -63,135 +63,229 @@ const DISABLE = true;
 //========================================================================================render==================================================================================
 // 2. 직사각형 좌표 계산 함수 (시계 방향)
 function updateMapData() {
-    mapData.length = 0; 
-    // 상단 (왼쪽 -> 오른쪽)
-    for (let i = 0; i < COL_COUNT - 1; i++) mapData.push({ x: i * TILE_W, y: 0 });
-    // 우측 (위 -> 아래)
-    for (let i = 0; i < ROW_COUNT - 1; i++) mapData.push({ x: (COL_COUNT - 1) * TILE_W, y: i * TILE_H });
-    // 하단 (오른쪽 -> 왼쪽)
-    for (let i = COL_COUNT - 1; i > 0; i--) mapData.push({ x: i * TILE_W, y: (ROW_COUNT - 1) * TILE_H });
-    // 좌측 (아래 -> 위)
-    for (let i = ROW_COUNT - 1; i > 0; i--) mapData.push({ x: 0, y: i * TILE_H });
+    mapData.length = 0;
+    
+    const dpr = window.devicePixelRatio || 1;
+    const centerX = (canvas.width / dpr) / 2;
+    const centerY = (canvas.height / dpr) / 2;
+
+    // 1. 맵 전체의 가로/세로 크기 계산
+    // 다이아몬드 형태이므로 전체 가로 폭은 (한 변의 칸 수 - 1) * TILE_W 입니다.
+    const totalMapWidth = (COL_COUNT - 1) * TILE_W;
+    const totalMapHeight = (COL_COUNT - 1) * TILE_H;
+
+    // 2. 시작점 재계산 (전체 폭의 절반만큼 왼쪽으로 이동)
+    // centerX에서 가로 폭의 절반을 빼지 않고, 
+    // 다이아몬드 꼭짓점 기준 좌표계로 다시 잡습니다.
+    const startX = centerX; 
+    const startY = centerY - (totalMapHeight / 2) - 20; //세로 위치조정 +는 내림 -는 올림
+
+    const stepX = TILE_W / 2;
+    const stepY = TILE_H / 2;
+
+    // --- 타일 배치 로직 ---
+    
+    // 1. 상단 -> 우측
+    for (let i = 0; i < COL_COUNT - 1; i++) {
+        mapData.push({ 
+            x: startX + (i * stepX) - (TILE_W / 2), // TILE_W/2를 빼서 타일 자체가 중앙에 오도록 함
+            y: startY + (i * stepY) 
+        });
+    }
+    // 2. 우측 -> 하단
+    for (let i = 0; i < COL_COUNT - 1; i++) {
+        mapData.push({ 
+            x: startX + ((COL_COUNT - 1) * stepX) - (i * stepX) - (TILE_W / 2), 
+            y: startY + ((COL_COUNT - 1) * stepY) + (i * stepY) 
+        });
+    }
+    // 3. 하단 -> 좌측
+    for (let i = 0; i < COL_COUNT - 1; i++) {
+        mapData.push({ 
+            x: startX - (i * stepX) - (TILE_W / 2), 
+            y: startY + (totalMapHeight) - (i * stepY) 
+        });
+    }
+    // 4. 좌측 -> 상단
+    for (let i = 0; i < COL_COUNT - 1; i++) {
+        mapData.push({ 
+            x: startX - ((COL_COUNT - 1) * stepX) + (i * stepX) - (TILE_W / 2), 
+            y: startY + ((COL_COUNT - 1) * stepY) - (i * stepY) 
+        });
+    }
 }
 
 function resizeCanvas() {
-    // 1. 기기의 픽셀 비율(DPR) 가져오기 (보통 모바일은 2~3)
     const dpr = window.devicePixelRatio || 1;
-    
-    // 2. 화면에 보여질 논리적 크기 설정
     const logicalWidth = window.innerWidth - 20;
     const logicalHeight = window.innerHeight - 20;
 
-    // 3. 실제 캔버스의 내부 해상도(픽셀 수)를 비율만큼 확대
     canvas.width = logicalWidth * dpr;
     canvas.height = logicalHeight * dpr;
-
-    // 4. 브라우저에 보이는 실제 크기는 원래대로 고정 (CSS 스타일)
     canvas.style.width = logicalWidth + 'px';
     canvas.style.height = logicalHeight + 'px';
-
-    // 5. 모든 그리기 작업에 dpr 배율 적용
     ctx.scale(dpr, dpr);
 
-    // 6. 타일 크기 계산 (논리적 크기 기준)
-    TILE_W = logicalWidth / COL_COUNT;
-    TILE_H = logicalHeight / ROW_COUNT;
+    // 정사각형 다이아몬드 배치를 위해 타일 크기 최적화
+    // 전체 맵 너비가 화면 너비의 90% 정도 차지하도록 설정
+    TILE_W = (logicalWidth * 0.6) / (COL_COUNT - 1);
+    TILE_H = TILE_W * 0.6; // 3D 느낌을 위해 가로세로 비율 조정 (0.5~0.6 추천)
 
     updateMapData();
     render();
 }
 
 // 렌더링 함수 (View)
+/**
+ * 마작 블록 스타일의 입체 타일을 그리는 함수
+ */
+function drawMahjongTile(tile, info, index) {
+    const padding = 1;
+    const x = tile.x;
+    const y = tile.y;
+    const w = TILE_W;
+    const h = TILE_H;
+    const depth = 12; // 블록의 두께 (입체감)
+    const centerX = x + w / 2;
+    const centerY = y + h / 2;
+
+    // 1. 블록 옆면 (입체 두께) - 먼저 그려야 상판에 가려짐
+    ctx.fillStyle = "#bdc3c7"; // 블록 옆면 색상
+    ctx.beginPath();
+    ctx.moveTo(x, centerY); // 왼쪽 끝
+    ctx.lineTo(x, centerY + depth); 
+    ctx.lineTo(centerX, y + h + depth); // 아래 끝
+    ctx.lineTo(x + w, centerY + depth); // 오른쪽 끝
+    ctx.lineTo(x + w, centerY);
+    ctx.lineTo(centerX, y + h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#95a5a6";
+    ctx.stroke();
+
+    // 2. 블록 윗면 (마름모 상판)
+    // 소유자가 있으면 해당 유저 색상, 없으면 흰색 계열
+    if (info.owner && players[info.owner]) {
+        ctx.fillStyle = players[info.owner].color;
+    } else {
+        ctx.fillStyle = "#ffffff";
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, y);          // 위
+    ctx.lineTo(x + w, centerY);      // 오른쪽
+    ctx.lineTo(centerX, y + h);      // 아래
+    ctx.lineTo(x, centerY);          // 왼쪽
+    ctx.closePath();
+    ctx.fill();
+    
+    // 상판 테두리
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 3. 내부 텍스트 및 정보
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // 세계일주(17), 무인도(6), 기금(11), 세금(18) 등 특수 아이콘/텍스트 처리
+    let title = info.name;
+    if (index === 0) title = "🚩 " + title;
+    if (index === 6) title = "🏝️ " + title;
+    if (index === 17) title = "✈️ " + title;
+
+    ctx.fillStyle = "#2c3e50";
+    ctx.font = `bold ${Math.floor(TILE_H * 0.2)}px sans-serif`;
+    ctx.fillText(title, centerX, centerY - TILE_H * 0.1);
+
+    // 가격/소유주 표시
+    if (info.type === "land" && !info.ownerName) {
+        ctx.font = `${Math.floor(TILE_H * 0.15)}px sans-serif`;
+        ctx.fillStyle = "#2980b9";
+        ctx.fillText(`${info.price}만`, centerX, centerY + TILE_H * 0.15);
+    } else if (info.ownerName) {
+        ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+        ctx.fillStyle = "#c0392b";
+        ctx.fillText(`[${info.ownerName}]`, centerX, centerY + TILE_H * 0.15);
+    }
+
+    // 특수 정보 (기금/세금 액수)
+    if (index === 11) {
+        ctx.fillStyle = "#e67e22";
+        ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+        ctx.fillText(`${currentTaxPool}만`, centerX, centerY + TILE_H * 0.2);
+    }
+    if (index === 18) {
+        ctx.fillStyle = "#c0392b";
+        ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+        ctx.fillText(`150만`, centerX, centerY + TILE_H * 0.2);
+    }
+
+    // 4. 세계일주 텔레포트 중일 때 강조 (노란 후광)
+    if (isTeleporting) {
+        ctx.strokeStyle = "rgba(241, 196, 15, 0.8)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX, y - 5);
+        ctx.lineTo(x + w + 5, centerY);
+        ctx.lineTo(centerX, y + h + 5);
+        ctx.lineTo(x - 5, centerY);
+        ctx.closePath();
+        ctx.stroke();
+    }
+}
+
 function render() {
     const dpr = window.devicePixelRatio || 1;
-    // 실제 논리적 크기만큼만 지우면 scale(dpr) 덕분에 전체가 지워집니다.
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-    
-    // 캔버스의 텍스트가 더 부드럽게 그려지도록 설정
-    ctx.textBaseline = "middle"; // 세로 정렬 기준을 중간으로
-    ctx.imageSmoothingEnabled = true; // 이미지 스무딩 활성화
-    
-    // 폰트 크기는 세로 높이(TILE_H) 기준으로 맞추는 것이 안전합니다.
-    const nameFontSize = Math.floor(TILE_H * 0.18);
-    const priceFontSize = Math.floor(TILE_H * 0.15);
+    ctx.imageSmoothingEnabled = true;
 
-    mapData.forEach((tile, index) => {
-        const info = currentMap[index] || { name: "...", price: 0 };
-
-        if (info.owner) {
-            ctx.fillStyle = players[info.owner] ? players[info.owner].color + '33' : '#eee';
-            ctx.fillRect(tile.x, tile.y, TILE_W, TILE_H);
-        }
-
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(tile.x, tile.y, TILE_W, TILE_H);
-        
-        ctx.fillStyle = '#2c3e50';
-        ctx.font = `bold ${nameFontSize}px sans-serif`;
-        ctx.textAlign = "center";
-        // 위치를 TILE_W, TILE_H에 맞춰 조정
-        ctx.fillText(info.name, tile.x + TILE_W / 2, tile.y + TILE_H * 0.3);
-
-        if (info.type === "land") {
-            ctx.font = `${priceFontSize}px sans-serif`;
-            ctx.fillStyle = "#2980b9";
-            ctx.fillText(`${info.price}만`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.55);
-        }
-        
-        if (info.ownerName) {
-            ctx.fillStyle = "#c0392b";
-            ctx.font = `bold ${priceFontSize}px sans-serif`;
-            ctx.fillText(`[${info.ownerName}]`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.85);
-        }
-
-        if (index === 11) {
-            ctx.fillStyle = "#e67e22"; // 강조색
-            ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
-            ctx.fillText(`기금: ${currentTaxPool}만`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.7);
-        }
-
-        if (index === 18) {
-            ctx.fillStyle = "#c0392b";
-            ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
-            ctx.fillText(`세금: 150만`, tile.x + TILE_W / 2, tile.y + TILE_H * 0.7);
-        }
-        if (isTeleporting) {
-            ctx.strokeStyle = "rgba(241, 196, 15, 0.5)";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(tile.x + 5, tile.y + 5, TILE_W - 10, TILE_H - 10);
-        }
+    // 1. 모든 타일 그리기
+    // 1. [핵심] 그리기 순서 정렬 (Painter's Algorithm)
+    // Y좌표가 낮은(뒤에 있는) 타일을 먼저 그리고, Y가 높은(앞에 있는) 타일을 나중에 그립니다.
+    const sortedIndices = [...mapData.keys()].sort((a, b) => {
+        return mapData[a].y - mapData[b].y;
     });
 
+    // 2. 정렬된 순서대로 타일 그리기
+    sortedIndices.forEach(index => {
+        const tile = mapData[index];
+        const info = currentMap[index] || { name: "...", price: 0 };
+        drawMahjongTile(tile, info, index);
+    });
+
+    // 2. 플레이어 말 그리기
     Object.keys(players).forEach(id => {
         const p = players[id];
         const pos = mapData[p.position];
         if (!pos) return;
 
-        // 무인도 상태면 캐릭터를 약간 반투명하게 하거나 그림자를 뺌
-        const displayName = p.lockedTurns > 0 ? `🏝️ ${p.name}` : p.name;
+        const centerX = pos.x + TILE_W / 2;
+        const centerY = pos.y + TILE_H / 2;
+        const pieceRadius = Math.min(TILE_W, TILE_H) * 0.2;
+
         ctx.globalAlpha = p.lockedTurns > 0 ? 0.5 : 1.0;
 
-        // 말 크기는 가로/세로 중 작은 쪽 기준으로 설정
-        const pieceRadius = Math.min(TILE_W, TILE_H) * 0.25;
-
-
-        ctx.shadowBlur = 5;
-        ctx.shadowColor = "rgba(0,0,0,0.3)";
+        // 플레이어 캐릭터 (입체감을 위해 그림자 추가)
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(0,0,0,0.4)";
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(pos.x + TILE_W/2, pos.y + TILE_H/2, pieceRadius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, pieceRadius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
+        // 닉네임 표시
         ctx.fillStyle = "#000";
-        ctx.font = `bold ${Math.floor(pieceRadius * 0.8)}px sans-serif`;
+        const displayName = p.lockedTurns > 0 ? `🏝️ ${p.name}` : p.name;
+        ctx.font = `bold ${Math.floor(pieceRadius * 0.9)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(displayName, centerX, centerY - pieceRadius - 10);
         
-        ctx.fillText(displayName, pos.x + TILE_W/2, pos.y + TILE_H/2 - pieceRadius - 5); //말에 이름 나타내기
-
-        
-        ctx.globalAlpha = 1.0; // 복구
+        ctx.globalAlpha = 1.0;
     });
 }
 // 초기 렌더링
