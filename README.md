@@ -25,10 +25,3 @@
 수정해야할 사항
 
 
-배포할때 nginx 
-
-db postgresql 모든 db중에 점유율 1위이고 성능 좋음 
-
-sqllite3 : 파일 하나로 db를 관리 간단하게 db를 구축해서 편리함. 
-
-나중에 배포할때 postgresql로 마이그레이션해서

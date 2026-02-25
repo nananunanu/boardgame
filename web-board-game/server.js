@@ -14,37 +14,43 @@ let taxPool = 50; // 누적된 사회복지기금
 // 클라이언트 정적 파일 제공 (public 폴더 내의 파일들)
 app.use(express.static('public'));
 //========================================================================================map========================================================================================
-// server.js 의 mapInfo를 24칸으로 교체
 const mapInfo = [
-    { name: "출발지", price: 0, type: "start" },
+    // 0~6: 상단 변 (7칸)
+    { name: "출발지", price: 0, type: "start" }, // 0
     { name: "타이베이", price: 50, type: "land", owner: null },
-    { name: "베이징", price: 60, type: "land", owner: null },
-    { name: "제주도", price: 80, type: "land", owner: null },
-    { name: "싱가포르", price: 100, type: "land", owner: null },
-    { name: "방콕", price: 110, type: "land", owner: null },
-    { name: "무인도", price: 0, type: "special" }, // 6번 칸 (모서리)
+    { name: "베이징", price: 80, type: "land", owner: null },
+    { name: "마닐라", price: 100, type: "land", owner: null },
+    { name: "제주도", price: 120, type: "land", owner: null },
+    { name: "싱가포르", price: 150, type: "land", owner: null },
+    { name: "방콕", price: 180, type: "land", owner: null },
 
-    { name: "독도", price: 200, type: "land", owner: null },
-    { name: "마드리드", price: 220, type: "land", owner: null },
-    { name: "아테네", price: 230, type: "land", owner: null },
-    { name: "로마", price: 250, type: "land", owner: null },
-    { name: "사회복지", price: 0, type: "special" }, // 11번 칸 (모서리)
+    // 7~13: 우측 변 (7칸)
+    { name: "무인도", price: 0, type: "special" }, // 7 (모서리)
+    { name: "델리", price: 200, type: "land", owner: null },
+    { name: "카이로", price: 220, type: "land", owner: null },
+    { name: "마드리드", price: 240, type: "land", owner: null },
+    { name: "아테네", price: 260, type: "land", owner: null },
+    { name: "로마", price: 280, type: "land", owner: null },
+    { name: "베를린", price: 300, type: "land", owner: null },
 
-    { name: "베를린", price: 280, type: "land", owner: null },
+    // 14~20: 하단 변 (7칸)
+    { name: "사회복지", price: 0, type: "special" }, // 14 (모서리)
     { name: "부산", price: 320, type: "land", owner: null },
-    { name: "파리", price: 350, type: "land", owner: null },
-    { name: "런던", price: 350, type: "land", owner: null },
-    { name: "취리히", price: 380, type: "land", owner: null },
-    { name: "세계여행", price: 0, type: "special" }, // 17번 칸 (모서리)
+    { name: "시드니", price: 350, type: "land", owner: null },
+    { name: "상파울루", price: 380, type: "land", owner: null },
+    { name: "파리", price: 400, type: "land", owner: null },
+    { name: "런던", price: 420, type: "land", owner: null },
+    { name: "취리히", price: 450, type: "land", owner: null },
 
-    { name: "국세청", price: 0, type: "special", owner: null },
-    { name: "토론토", price: 420, type: "land", owner: null },
-    { name: "로스앤젤레스", price: 450, type: "land", owner: null },
-    { name: "화성", price: 500, type: "land", owner: null },
-    { name: "찬스", price: 0, type: "special" },
-    { name: "뉴욕", price: 600, type: "land", owner: null }  // 23번 칸
+    // 21~27: 좌측 변 (7칸)
+    { name: "세계여행", price: 0, type: "special" }, // 21 (모서리)
+    { name: "찬스", price: 0, type: "special" }, // 22 (기존 요청 칸)
+    { name: "국세청", price: 150, type: "special" }, // 23 (세금 징수)
+    { name: "토론토", price: 480, type: "land", owner: null },
+    { name: "로스앤젤레스", price: 520, type: "land", owner: null },
+    { name: "뉴욕", price: 550, type: "land", owner: null },
+    { name: "서울", price: 600, type: "land", owner: null }
 ];
-
 //========================================================================================socket========================================================================================
 io.on('connection', (socket) => {
     // 1. 단순 접속 시에는 아무것도 하지 않고 대기 (이름 입력 전까지)
@@ -140,8 +146,8 @@ io.on('connection', (socket) => {
     // [server.js] 텔레포트 요청 처리 추가
     socket.on('teleport-request', (targetIndex) => {
         const player = players[socket.id];
-        // 현재 위치가 세계일주(17번)이고, 본인 턴일 때만 허용
-        if (player && player.position === 17) {
+        // 현재 위치가 세계일주(21번)이고, 본인 턴일 때만 허용
+        if (player && player.position === 21) {
             player.position = targetIndex;
             
             io.emit('game-log', `✈️ ${player.name}님이 세계일주를 통해 ${mapInfo[targetIndex].name}(으)로 이동했습니다!`);
@@ -194,11 +200,11 @@ function handleMoveComplete(socket, finalPos) {
             // 클라이언트에게 "구매 의사"를 물어보라고 신호를 보냄
             socket.emit('ask-buy-land', { index: finalPos, name: land.name, price: land.price });
         }
-        else if (finalPos === 6) {  // ★ 6번 칸 무인도 도착 체크
+        else if (finalPos === 7) {  // ★ 6번 칸 무인도 도착 체크
             player.lockedTurns = 3; // 3턴 동안 이동 불가
             io.emit('game-log', `🚨 [사건] ${player.name}님이 무인도에 표류되었습니다! (3턴간 이동 불가)`);
         } 
-        else if (finalPos === 11) {// 11번 칸: 기금 수령
+        else if (finalPos === 14) {// 11번 칸: 기금 수령
             if (taxPool > 0) {
             player.money += taxPool;
             io.emit('game-log', `🎉 [대박] ${player.name}님이 사회복지기금 ${taxPool}만원을 모두 수령했습니다!`);
@@ -207,11 +213,11 @@ function handleMoveComplete(socket, finalPos) {
                 io.emit('game-log', `😊 ${player.name}님이 사회복지기금 칸에 방문했지만, 쌓인 기금이 없습니다.`);
             }
         }
-        else if (finalPos === 17) {
+        else if (finalPos === 21) {
             socket.emit('start-teleport');
             io.emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
         }
-        else if (finalPos === 18) { //  18번칸: 국세청 (기금적립)
+        else if (finalPos === 23) { //  18번칸: 국세청 (기금적립)
             const tax = 150; // 세금 금액
             if (player.money >= tax) {
                 player.money -= tax;
@@ -275,7 +281,7 @@ function handleBankruptcy(socketId) {
 //========================================================================================function========================================================================================
 
 //========================================================================================server========================================================================================
-const PORT = 3000;
+const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

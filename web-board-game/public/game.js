@@ -190,9 +190,10 @@ function drawMahjongTile(tile, info, index) {
 
     // 세계일주(17), 무인도(6), 기금(11), 세금(18) 등 특수 아이콘/텍스트 처리
     let title = info.name;
-    if (index === 0) title = "🚩 " + title;
-    if (index === 6) title = "🏝️ " + title;
-    if (index === 17) title = "✈️ " + title;
+    if (index === 0) title = "🚩 " + title; //출발지
+    if (index === 7) title = "🏝️ " + title; // 무인도 
+    if (index === 21) title = "✈️ " + title; // 세계여행
+    if (index === 23) title = "💸 " + title; // 세금
 
     ctx.fillStyle = "#2c3e50";
     ctx.font = `bold ${Math.floor(TILE_H * 0.2)}px sans-serif`;
@@ -210,12 +211,12 @@ function drawMahjongTile(tile, info, index) {
     }
 
     // 특수 정보 (기금/세금 액수)
-    if (index === 11) {
+    if (index === 14) {
         ctx.fillStyle = "#e67e22";
         ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
         ctx.fillText(`${currentTaxPool}만`, centerX, centerY + TILE_H * 0.2);
     }
-    if (index === 18) {
+    if (index === 23) {
         ctx.fillStyle = "#c0392b";
         ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
         ctx.fillText(`150만`, centerX, centerY + TILE_H * 0.2);
