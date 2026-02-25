@@ -97,6 +97,60 @@
             #roll-btn { width: 70px; height: 70px; font-size: 20px; }
             #inner-ui { width: 65%; }
         }
+
+        .bankbook {
+            position: fixed;
+            bottom: 20px;
+            left: 30px;
+            width: 17vw;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 100;
+            /* 우측으로 약간 기울어지게 회전 및 원근감 적용 */
+            transform: perspective(1000px) rotateY(15deg) rotateX(5deg);    
+            box-shadow: -10px 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .bankbook:hover {
+            transform: perspective(1000px) rotateY(-5deg) rotateX(0deg);
+        }
+
+        .bankbook-top {
+            background-color: #3498db; /* 통장 커버 색상 */
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+        }
+
+        .bankbook-bottom {
+            background-color: #fdfae5; /* 통장 속지 색상 (연한 미색) */
+            padding: 15px;
+            border-radius: 0 0 10px 10px;
+            min-height: 8vh;
+            border: 1px solid #dcdde1;
+        }
+
+        .info-row {
+            margin-bottom: 8px;
+            border-bottom: 1px dotted #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .label {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+
+        #my-money {
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .unit { font-size: 0.8rem; margin-left: 2px; }
     </style>
 </head>
 <body>
@@ -108,8 +162,23 @@
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-
-        <div id="leaderboard">
+        <div id="personal-ui" class="bankbook">
+            <div id="bankbook-cover" class="bankbook-top">
+                <span class="bankbook-title">MY ASSETS</span>
+            </div>
+            <div class="bankbook-bottom">
+                <div class="info-row">
+                    <span class="label">NAME:</span>
+                    <span id="my-name-display">---</span> </div>
+                <div class="info-row">
+                    <span class="label">CASH:</span>
+                    <span id="my-money-display">0</span><span class="unit">만</span> </div>
+                <div class="info-row">
+                    <span class="label">LANDS:</span>
+                    <span id="my-lands-display">0</span> </div>
+            </div>
+        </div>
+        <!-- <div id="leaderboard">
                 <table id="player-table">
                     <thead>
                         <tr>
@@ -120,7 +189,7 @@
                     </thead>
                     <tbody id="player-list"></tbody>
                 </table>
-        </div>
+        </div> -->
         <!-- <div id="status">대기 중...</div>
         <div id="inner-ui">
             <p id="result-textText">주사위를 굴려주세요!</p>

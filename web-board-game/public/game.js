@@ -370,6 +370,40 @@ function render() {
 // 초기 렌더링
 render();
 //========================================================================================function========================================================================================
+function updatePersonalUI() {
+    const myId = socket.id;
+    if (!myId || !players || !players[myId]) return;
+
+    const me = players[myId];
+
+    // 요소들을 미리 가져옵니다.
+    const nameElem = document.getElementById('my-name-display');
+    const moneyElem = document.getElementById('my-money-display');
+    const landElem = document.getElementById('my-lands-display');
+    const coverElem = document.getElementById('bankbook-cover');
+
+    // 요소가 존재할 때만 실행 (TypeError 방지)
+    if (nameElem) nameElem.innerText = me.name;
+    if (moneyElem) moneyElem.innerText = me.money.toLocaleString();
+    
+    // 내 땅 개수 계산
+    if (landElem) {
+        const myLandCount = currentMap.filter(tile => tile.owner === myId).length;
+        landElem.innerText = myLandCount;
+    }
+
+    // 보너스: 통장 커버 색상을 내 캐릭터 색상으로 변경
+    if (coverElem && me.color) {
+        coverElem.style.backgroundColor = me.color;
+    }
+}
+
+// 소켓 리스너 부분
+socket.on('update-players', (updatedPlayers) => {
+    players = updatedPlayers;
+    render();
+    updatePersonalUI(); // 여기서 호출!
+});
 function updateLeaderboard() {
     const list = document.getElementById('player-list');
     list.innerHTML = ""; // 기존 내용을 싹 비움
@@ -425,6 +459,7 @@ socket.on('update-players', (serverPlayers) => {
     players = serverPlayers;
     render();
     updateLeaderboard(); // 현황판 갱신 함수 호출
+    updatePersonalUI()
 });
 
 socket.on('connect', () => {
