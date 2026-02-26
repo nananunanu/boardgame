@@ -69,7 +69,7 @@
         /* 보드 중앙 내부 UI */
         #inner-ui {
             position: absolute;
-            top: 67%; left: 50%;
+            top: 60vh; left: 50%;
             transform: translate(-50%, -50%);
             width: 70%; /* 11x11 보드 중앙 빈 공간에 맞춤 */
             max-height: 55%;
@@ -88,9 +88,9 @@
         }
         #your-turn {
             transform: translate(-50%, -50%);
-            position: absolute; top: 60%; left:50%;
+            position: absolute; top: 55vh; left:50%;
             color: white;
-            padding: 5px 15px; border-radius: 5px; font-size: 50px;
+            padding: 5px 15px; border-radius: 5px; font-size: 5vw;
 
             font-family: "Bungee", sans-serif;
             font-style: "normal";
@@ -100,7 +100,7 @@
             margin-top: 10px;
             /* background: rgba(0,0,0,0.5);  */
             color: #fff; padding: 5px 10px; border-radius: 5px;
-            font-weight: bold; font-size: 13px;
+            font-weight: bold; font-size: 1.5vw;
         }
 
         /* 플로팅 주사위 버튼 */
@@ -173,6 +173,82 @@
         }
 
         .unit { font-size: 0.8rem; margin-left: 2px; }
+
+.dice-button-wrapper {
+    position: fixed;
+    bottom: 40px;
+    right: 50px;
+    perspective: 1000px; /* 3D 효과를 위한 원근감 */
+}
+
+.isometric-btn {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    /* Isometric 각도: 오른쪽으로 약간 기울임 */
+    transform: rotateX(50deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease, filter 0.2s;
+}
+
+/* 버튼의 윗면 (키캡 상단) */
+.btn-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fdfae5; /* 통장 속지와 비슷한 따뜻한 흰색 */
+    border: 2px solid #b2a3b0;
+    color: #2c3e50;
+    font-weight: bold;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    transform: translateZ(20px); /* 위로 띄워서 두께 형성 */
+    transition: transform 0.1s ease;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+}
+
+/* 버튼의 옆면 (두께 부분) */
+.btn-side {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #dac6cc; /* 맵 블록 옆면과 통일감 있는 색상 */
+    border: 2px solid #888294;
+    border-radius: 8px;
+    transform: translateZ(0);
+}
+
+/* 버튼을 눌렀을 때의 효과 (키보드 클릭감) */
+.isometric-btn:active .btn-top {
+    transform: translateZ(5px); /* 눌렀을 때 높이가 낮아짐 */
+}
+
+.isometric-btn:disabled {
+    filter: grayscale(1);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* 버튼 위에 글자나 아이콘 추가 디테일 */
+.btn-top::after {
+    content: "🎲";
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
     </style>
 </head>
 <body>
@@ -219,7 +295,14 @@
             <p id="result-textText">주사위를 굴려주세요!</p>
         </div>
 
-        <button id="roll-btn" type="button" disabled>🎲</button>
+        <div class="dice-button-wrapper">
+            <button id="roll-btn" class="isometric-btn">
+                <span class="btn-top">ROLL</span>
+                <span class="btn-side"></span>
+            </button>
+        </div>
+        
+        <!-- <button id="roll-btn" type="button" disabled>🎲</button> -->
     </div>
 
     <div id="bankruptcy-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;">

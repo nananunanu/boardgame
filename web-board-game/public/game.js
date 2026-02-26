@@ -159,8 +159,6 @@ function drawMahjongTile(tile, info, index) {
     const blockSideColor = "#DAC6CC"
     const blockSideLineColor = "#888294"
     
-    
-
     const padding = 1;
     const x = tile.x;
     const y = tile.y;
