@@ -117,9 +117,7 @@ io.on('connection', (socket) => {
             io.emit('game-log', `💰 ${player.name}님이 한 바퀴를 완주하여 월급 ${salary}만원을 받았습니다!`);
         }
 
-        // 턴 교대 알고리즘: (현재인덱스 + 1) % 전체인원
-        currentTurnIndex = (currentTurnIndex + 1) % playerOrder.length;
-        io.emit('turn-change', playerOrder[currentTurnIndex]);
+        
     });
     
     socket.on('move-complete', (finalPos) => {
@@ -230,6 +228,10 @@ function handleMoveComplete(socket, finalPos) {
                 io.emit('game-log', `💸 [징수] ${player.name}님이 잔액이 부족하여 남은 자산을 세금으로 납부했습니다.`);
             }
         }
+        // 턴 교대 알고리즘: (현재인덱스 + 1) % 전체인원
+        currentTurnIndex = (currentTurnIndex + 1) % playerOrder.length;
+        io.emit('turn-change', playerOrder[currentTurnIndex]);
+        
         io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
         io.emit('update-taxpool', taxPool); // 사회복지기구 현 기금상태 업데이트
 }
