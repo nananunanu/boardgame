@@ -363,7 +363,7 @@ function render() {
         if (diceAnim.showResult) {
         const dpr = window.devicePixelRatio || 1;
         const centerX = (canvas.width / dpr) / 2;
-        const centerY = (canvas.height / dpr) / 2;
+        const centerY = (canvas.height / dpr) / 2 - 30;
         
         // 주사위 그림자 (바닥에 고정)
         ctx.fillStyle = "rgba(0,0,0,0.2)";
@@ -372,7 +372,7 @@ function render() {
         ctx.fill();
 
         // 3D 주사위 본체
-        draw3DDice(ctx, centerX, centerY, 60, diceAnim.value, diceAnim.rotation, diceAnim.yOffset);
+        draw3DDice(ctx, centerX, centerY, 45, diceAnim.value, diceAnim.rotation, diceAnim.yOffset);
         }
     });
 }
