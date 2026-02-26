@@ -397,13 +397,6 @@ function updatePersonalUI() {
         coverElem.style.backgroundColor = me.color;
     }
 }
-
-// 소켓 리스너 부분
-socket.on('update-players', (updatedPlayers) => {
-    players = updatedPlayers;
-    render();
-    updatePersonalUI(); // 여기서 호출!
-});
 function updateLeaderboard() {
     const list = document.getElementById('player-list');
     list.innerHTML = ""; // 기존 내용을 싹 비움
@@ -540,7 +533,6 @@ socket.on('start-teleport', () => {
 });
 
 socket.on('ask-buy-land', (data) => {
-    // 서버가 물어볼 때만 팝업을 띄움
     setTimeout(() => {
         if (confirm(`${data.name}(${data.price}만원)을 구매하시겠습니까?`)) {
             socket.emit('buy-land', data.index);
