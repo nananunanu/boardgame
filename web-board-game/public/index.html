@@ -9,14 +9,24 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <!-- <link rel="stylesheet" href="style.css"> -->
     <title>Web Board Game - Alpha</title>
     <style>
+        .bungee-regular {
+            font-family: "Bungee", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
         :root {
-            --bg-color: #2c3e50;
-            --board-bg: #FDFBF6;
-            --accent-color: #e74c3c;
+            --bg-color: #2c3e50; /* CLOUD WISP #F1FAFF / CANDY FLOSS #FEECEB / CREAME #FFF5EA / MOJITO BREEZE #FBFFF4 / COLD STEEL #F8F7F4             */
+            --board-bg: #DAC6CC;
+            --accent-color: #FDFBF6;
         }
 
         body { 
@@ -35,18 +45,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* 보드 중앙 내부 UI */
-        #inner-ui {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70%; /* 11x11 보드 중앙 빈 공간에 맞춤 */
-            max-height: 55%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: none; /* 클릭 방해 금지 */
-        }
+
 
         #leaderboard {
             position: absolute; top: 10%; left: 10%; font-weight: bold;
@@ -67,28 +66,51 @@
         
         #player-table th { border-bottom: 2px solid #ddd; padding: 12px 5px; color: #333; }
         #player-table td { padding: 12px 5px; text-align: center; }
-
+        /* 보드 중앙 내부 UI */
+        #inner-ui {
+            position: absolute;
+            top: 67%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%; /* 11x11 보드 중앙 빈 공간에 맞춤 */
+            max-height: 55%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* 클릭 방해 금지 */
+        }
         /* 상태 메시지 및 결과 텍스트 */
         #status {
-            transform: translate(-50%, -50%);
-            position: absolute; top: 40%; left:50%; font-weight: bold;
-            background: rgba(0,0,0,0.5); color: white;
+            /* transform: translate(-50%, -50%); */
+            position: absolute; top: 5%; left:2%; font-weight: bold;
+            /* background: rgba(0,0,0,0.5);  */
+            color: white;
             padding: 5px 15px; border-radius: 5px; font-size: 13px;
+        }
+        #your-turn {
+            transform: translate(-50%, -50%);
+            position: absolute; top: 60%; left:50%;
+            color: white;
+            padding: 5px 15px; border-radius: 5px; font-size: 50px;
+
+            font-family: "Bungee", sans-serif;
+            font-style: "normal";
         }
 
         #result-textText {
-            margin-top: 10px; font-size: 13px; 
-            background: rgba(0,0,0,0.5); color: #fff; padding: 5px 10px; border-radius: 5px;
+            margin-top: 10px;
+            /* background: rgba(0,0,0,0.5);  */
+            color: #fff; padding: 5px 10px; border-radius: 5px;
+            font-weight: bold; font-size: 13px;
         }
 
         /* 플로팅 주사위 버튼 */
         #roll-btn {
-            position: absolute; bottom: 25%; right: 15%;
+            /* position: absolute; bottom: 25%; right: 15%;
             width: 100px; height: 100px; border-radius: 50%;
             font-size: 24px; background: var(--accent-color); border: 3px solid #fff;
             color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             display: flex; justify-content: center; align-items: center;
-            z-index: 100;
+            z-index: 100; */
         }
         #roll-btn:disabled { background: #7f8c8d; opacity: 0.7; }
 
@@ -190,10 +212,12 @@
                     <tbody id="player-list"></tbody>
                 </table>
         </div> -->
-        <!-- <div id="status">대기 중...</div>
+        <div id="status">대기 중...</div>
+
+        <div id="your-turn">대기 중</div>
         <div id="inner-ui">
             <p id="result-textText">주사위를 굴려주세요!</p>
-        </div> -->
+        </div>
 
         <button id="roll-btn" type="button" disabled>🎲</button>
     </div>

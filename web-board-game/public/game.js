@@ -2,6 +2,7 @@ const socket = io();
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const statusText = document.getElementById('status');
+const turnText = document.getElementById('your-turn');
 const rollBtn = document.getElementById('roll-btn');
 const resultText = document.getElementById('result-textText');
 //PWA를 위한 코드
@@ -18,6 +19,7 @@ document.getElementById('start-btn').onclick = function() {
 };
 // 주사위 버튼 이벤트
 rollBtn.onclick = () => {
+    rollBtn.disabled = DISABLE
     socket.emit('roll-dice');
 };
 canvas.addEventListener('click', (event) => {
@@ -26,6 +28,7 @@ canvas.addEventListener('click', (event) => {
     // 클릭한 좌표를 타일 인덱스로 변환
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
+
     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / dpr;
     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / dpr;
 
@@ -35,6 +38,7 @@ canvas.addEventListener('click', (event) => {
             
             isTeleporting = false;
             socket.emit('teleport-request', index);
+            render();
         }
     });
 });
@@ -88,7 +92,7 @@ function updateMapData() {
     // centerX에서 가로 폭의 절반을 빼지 않고, 
     // 다이아몬드 꼭짓점 기준 좌표계로 다시 잡습니다.
     const startX = centerX; 
-    const startY = centerY - (totalMapHeight / 2) - 20; //세로 위치조정 +는 내림 -는 올림
+    const startY = centerY - (totalMapHeight / 2) - 40; //세로 위치조정 +는 내림 -는 올림
 
     const stepX = TILE_W / 2;
     const stepY = TILE_H / 2;
@@ -150,17 +154,24 @@ function resizeCanvas() {
  * 마작 블록 스타일의 입체 타일을 그리는 함수
  */
 function drawMahjongTile(tile, info, index) {
+    const blockTopColor = "#FEECEB"
+    const blockTopLineColor = "#B2A3B0"
+    const blockSideColor = "#DAC6CC"
+    const blockSideLineColor = "#888294"
+    
+    
+
     const padding = 1;
     const x = tile.x;
     const y = tile.y;
     const w = TILE_W;
     const h = TILE_H;
-    const depth = 12; // 블록의 두께 (입체감)
+    const depth = 30; // 블록의 두께 (입체감)
     const centerX = x + w / 2;
     const centerY = y + h / 2;
 
     // 1. 블록 옆면 (입체 두께) - 먼저 그려야 상판에 가려짐
-    ctx.fillStyle = "#bdc3c7"; // 블록 옆면 색상
+    ctx.fillStyle = blockSideColor; // 블록 옆면 색상 #bdc3c7
     ctx.beginPath();
     ctx.moveTo(x, centerY); // 왼쪽 끝
     ctx.lineTo(x, centerY + depth); 
@@ -170,7 +181,7 @@ function drawMahjongTile(tile, info, index) {
     ctx.lineTo(centerX, y + h);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = "#95a5a6";
+    ctx.strokeStyle = blockSideLineColor; //#95a5a6
     ctx.stroke();
 
     // 2. 블록 윗면 (마름모 상판)
@@ -178,7 +189,7 @@ function drawMahjongTile(tile, info, index) {
     if (info.owner && players[info.owner]) {
         ctx.fillStyle = players[info.owner].color;
     } else {
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = blockTopColor;
     }
 
     ctx.beginPath();
@@ -190,7 +201,7 @@ function drawMahjongTile(tile, info, index) {
     ctx.fill();
     
     // 상판 테두리
-    ctx.strokeStyle = "#333";
+    ctx.strokeStyle = blockTopLineColor; //#333
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
@@ -206,17 +217,17 @@ function drawMahjongTile(tile, info, index) {
     if (index === 23) title = "💸 " + title; // 세금
 
     ctx.fillStyle = "#2c3e50";
-    ctx.font = `bold ${Math.floor(TILE_H * 0.2)}px sans-serif`;
+    ctx.font = `bold ${Math.floor(TILE_H * 0.28)}px sans-serif`;
     ctx.fillText(title, centerX, centerY - TILE_H * 0.1);
 
     // 가격/소유주 표시
     if (info.type === "land" && !info.ownerName) {
-        ctx.font = `${Math.floor(TILE_H * 0.15)}px sans-serif`;
+        ctx.font = `${Math.floor(TILE_H * 0.23)}px sans-serif`;
         ctx.fillStyle = "#2980b9";
         ctx.fillText(`${info.price}만`, centerX, centerY + TILE_H * 0.15);
     } else if (info.ownerName) {
-        ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
-        ctx.fillStyle = "#c0392b";
+        ctx.font = `bold ${Math.floor(TILE_H * 0.23)}px sans-serif`;
+        ctx.fillStyle = "#000000";
         ctx.fillText(`[${info.ownerName}]`, centerX, centerY + TILE_H * 0.15);
     }
 
@@ -397,30 +408,30 @@ function updatePersonalUI() {
         coverElem.style.backgroundColor = me.color;
     }
 }
-function updateLeaderboard() {
-    const list = document.getElementById('player-list');
-    list.innerHTML = ""; // 기존 내용을 싹 비움
+// function updateLeaderboard() {
+//     const list = document.getElementById('player-list');
+//     list.innerHTML = ""; // 기존 내용을 싹 비움
 
-    Object.keys(players).forEach(id => {
-        const p = players[id];
-        const row = document.createElement('tr');
+//     Object.keys(players).forEach(id => {
+//         const p = players[id];
+//         const row = document.createElement('tr');
         
-        // 현재 내 턴인지 확인해서 강조 표시
-        const isMyTurn = (id === currentTurnId) ? "⭐" : "";
-        const statusTag = p.lockedTurns > 0 ? ` 🏝️(${p.lockedTurns})` : "";
+//         // 현재 내 턴인지 확인해서 강조 표시
+//         const isMyTurn = (id === currentTurnId) ? "⭐" : "";
+//         const statusTag = p.lockedTurns > 0 ? ` 🏝️(${p.lockedTurns})` : "";
 
-        // 내가 소유한 땅의 개수 계산
-        const landCount = currentMap.filter(tile => tile.owner === id).length;
+//         // 내가 소유한 땅의 개수 계산
+//         const landCount = currentMap.filter(tile => tile.owner === id).length;
 
-        row.innerHTML = `
-            <td style="color: ${p.color}; font-weight: bold;">${isMyTurn} ${p.name}${statusTag}</td>
-            <td>${p.money}만원</td>
-            <td>${landCount}곳</td>
-            <td>${currentMap[p.position] ? currentMap[p.position].name : "출발지"}</td>
-        `;
-        list.appendChild(row);
-    });
-}
+//         row.innerHTML = `
+//             <td style="color: ${p.color}; font-weight: bold;">${isMyTurn} ${p.name}${statusTag}</td>
+//             <td>${p.money}만원</td>
+//             <td>${landCount}곳</td>
+//             <td>${currentMap[p.position] ? currentMap[p.position].name : "출발지"}</td>
+//         `;
+//         list.appendChild(row);
+//     });
+// }
 function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 애니메이션을 위한 함수
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -547,17 +558,18 @@ socket.on('turn-change', (activePlayerId) => {
     if (socket.id === activePlayerId) {
         // 이동 중이 아닐 때만 즉시 활성화 (이동 중이면 dice-result 끝날 때 활성화됨)
         if (!isMoving) {
-            rollBtn.disabled = ENABLE;
+            
         }
-        statusText.innerText = "당신의 차례입니다.";
+        rollBtn.disabled = ENABLE;
+        turnText.innerText = "YOUR TURN.";
         statusText.style.color = "#6cd668";
     } else {
         rollBtn.disabled = DISABLE;
         const opponentName = players[activePlayerId] ? players[activePlayerId].name : "상대방";
-        statusText.innerText = `${opponentName}님의 차례를 기다리는 중...`;
+        turnText.innerText = `WAIT.`;
         statusText.style.color = "red";
     }
-    updateLeaderboard();
+    // updateLeaderboard();
 });
 
 socket.on('player-bankrupt', (targetId) => { //파산 로직
