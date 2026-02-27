@@ -92,7 +92,7 @@ function updateMapData() {
     // centerX에서 가로 폭의 절반을 빼지 않고, 
     // 다이아몬드 꼭짓점 기준 좌표계로 다시 잡습니다.
     const startX = centerX; 
-    const startY = centerY - (totalMapHeight / 2) - 32; //세로 위치조정 +는 내림 -는 올림
+    const startY = centerY - (totalMapHeight / 2) - 25; //세로 위치조정 +는 내림 -는 올림
 
     const stepX = TILE_W / 2;
     const stepY = TILE_H / 2;
@@ -154,10 +154,10 @@ function resizeCanvas() {
  * 마작 블록 스타일의 입체 타일을 그리는 함수
  */
 function drawMahjongTile(tile, info, index) {
-    const blockTopColor = "#FEECEB"
-    const blockTopLineColor = "#B2A3B0"
-    const blockSideColor = "#DAC6CC"
-    const blockSideLineColor = "#888294"
+    const blockTopColor = "#F2F2F2" //#FEECEB
+    const blockTopLineColor = "#D0D3D8" //#B2A3B0
+    const blockSideColor = "#AAB6BE" //#DAC6CC
+    const blockSideLineColor = "#839AA1" //#888294
     const tileNameFontSize = 0.27; // 타일 이름 글꼴 크기 (타일 높이 대비 비율)
     
     const padding = 1;
@@ -716,6 +716,7 @@ socket.on('connect', () => {
 
 // game.js 에 로그 수신 이벤트 추가
 socket.on('game-log', (msg) => {
+    statusText.style.color = "#000";
     statusText.innerText = msg;
     console.log(msg);
 });
@@ -782,7 +783,7 @@ async function startMove(playerId, value) {
 socket.on('start-teleport', () => {
     isTeleporting = true;
     statusText.innerText = "✈️ 세계일주! 이동할 칸을 클릭하세요.";
-    statusText.style.color = "#f1c40f";
+    statusText.style.color = "#665617";
     // 렌더링을 호출하여 캔버스에 선택 가이드(노란 테두리 등)를 표시
     render(); 
 });

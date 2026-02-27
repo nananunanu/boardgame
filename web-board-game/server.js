@@ -46,7 +46,7 @@ const mapInfo = [
     { name: "세계여행", price: 0, type: "special" }, // 21 (모서리)
     { name: "찬스", price: 0, type: "special" }, // 22 (기존 요청 칸)
     { name: "국세청", price: 150, type: "special" }, // 23 (세금 징수)
-    { name: "", price: 330, type: "land", owner: null, buildingLevel: 0 },
+    { name: "캐나다", price: 330, type: "land", owner: null, buildingLevel: 0 },
     { name: "로스앤젤레스", price: 340, type: "land", owner: null, buildingLevel: 0 },
     { name: "뉴욕", price: 350, type: "land", owner: null, buildingLevel: 0 },
     { name: "서울", price: 1000, type: "land", owner: null, buildingLevel: 0 }
@@ -209,6 +209,10 @@ function buildBuilding(socket, tileIndex) {
     socket.emit('ask-build-building', { name: land.name, buildingName: buildingNames[land.buildingLevel], cost: buildingCosts[land.buildingLevel], index: tileIndex }); // 건물 건설 의사 묻기
 
 }
+function computeFee(price, level) {
+  const mult = [1, 2, 5, 10][level] || 0;
+  return Math.floor(price / 3 * mult);
+}
 function handleMoveComplete(socket, finalPos) {
         const player = players[socket.id];
         if (!player) return;
@@ -221,18 +225,17 @@ function handleMoveComplete(socket, finalPos) {
             const owner = players[land.owner];
             const baseFee = Math.floor(land.price * 0.3); // 기본 통행료는 땅값의 30%
 
-            const fee = () => {
-                const mult = [1, 2, 5, 10][land.buildingLevel] || 0; // 건물 레벨에 따른 배수
-                return Math.floor(baseFee * mult);
-            };
+            const fee = computeFee(land.price, land.buildingLevel); // 건물 레벨에 따른 통행료 계산
 
             if (player.money >= fee) {
                 player.money -= fee;
                 owner.money += fee;
                 // 모든 유저에게 누가 누구에게 얼마 줬는지 알림
+                console.log(`${player.name}님이 ${owner.name}님의 땅(${land.name})에 도착하여 통행료 ${fee}만원을 지불했습니다.`);
                 io.emit('game-log', `${player.name}님이 ${owner.name}님의 땅(${land.name})에 도착하여 통행료 ${fee}만원을 지불했습니다.`);
             } else {
                 // 파산 처리 (잔액 0원)
+                console.log(`${player.name}님이 ${owner.name}님의 땅(${land.name})에 도착하여 통행료 ${fee}만원을 지불했습니다.`);
                 owner.money += player.money
                 player.money = 0;
                 handleBankruptcy(socket.id);
@@ -326,13 +329,42 @@ function handleBankruptcy(socketId) {
         setTimeout(() => {
             io.emit('player-winner', playerOrder[0]);
         }, 2000)
+        resetGame();
         // 필요 시 게임 리셋 로직 추가
     } else {
         io.emit('turn-change', playerOrder[currentTurnIndex]);
     }
 }
 //========================================================================================function========================================================================================
+// 게임 전체 초기화 함수
+function resetGame() {
+    // 1. 맵 정보 초기화 (소유주 모두 제거)
+    mapInfo.forEach(tile => {
+        if (tile.type === 'land') {
+            tile.owner = null;
+            tile.buildingLevel = 0;
+        }
+    });
 
+    // 2. 플레이어 상태 초기화
+    Object.keys(players).forEach(id => {
+        players[id].position = 0;
+        players[id].money = 300; // 초기 자금으로 리셋
+        players[id].lockedTurns = 0;
+    });
+
+    // 3. 게임 시스템 변수 초기화
+    currentTurnIndex = 0;
+    taxPool = 50;
+
+    // 4. 모든 클라이언트에 초기화 신호 전송
+    io.emit('update-map', mapInfo);
+    io.emit('update-players', players);
+    io.emit('update-taxpool', taxPool);
+    io.emit('turn-change', playerOrder[currentTurnIndex]);
+    io.emit('game-reset'); // 클라이언트 UI 리셋용 이벤트
+    io.emit('game-log', "🔄 게임이 초기화되었습니다! 다시 시작하세요.");
+}
 //========================================================================================server========================================================================================
 const PORT = 8080;
 server.listen(PORT, () => {

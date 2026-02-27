@@ -17,32 +17,66 @@
     <!-- <link rel="stylesheet" href="style.css"> -->
     <title>Web Board Game - Alpha</title>
     <style>
+        html {
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
         .bungee-regular {
             font-family: "Bungee", sans-serif;
             font-weight: 400;
             font-style: normal;
         }
-
         :root {
             --bg-color: #2c3e50; /* CLOUD WISP #F1FAFF / CANDY FLOSS #FEECEB / CREAME #FFF5EA / MOJITO BREEZE #FBFFF4 / COLD STEEL #F8F7F4             */
             --board-bg: #DAC6CC;
             --accent-color: #FDFBF6;
         }
 
-        body { 
-            margin: 0; padding: 0; 
-            background: var(--bg-color); 
-            display: flex; justify-content: center; align-items: center;
-            height: 100dvh; overflow: hidden; font-family: 'Pretendard', sans-serif;
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            
+            /* 1. 높이 설정: vh 대신 dvh를 사용해 주소창 문제를 해결합니다. */
+            height: 100vh; /* 구형 브라우저 대비 */
+            height: 100dvh; /* 최신 브라우저: 화면에 딱 맞게 조절 */
+            
+            /* 2. 넘침 방지 */
+            overflow: hidden;
+            font-family: 'Pretendard', sans-serif;
+
+            background-image: url('img/background-img.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            /* 3. 배경 고정 해제: fixed는 때때로 모바일에서 계산 오류를 일으킵니다. 
+            화면 전체가 배경이라면 fixed를 지우는 것이 더 정확하게 맞습니다. */
+            /* background-attachment: fixed; */
+
+            /* 4. 비율 무시하고 꽉 채우기 */
+            background-size: 100% 100%;
         }
 
         #game-container { position: relative; display: flex; align-items: center; justify-content: center; }
 
         canvas { 
-            background: var(--board-bg); 
-            border: 3px solid #34495e; 
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            /* background: var(--board-bg);  */
+            /* border: 3px solid #34495e;  */
+            border-radius: 0px;
+            /* box-shadow: 0 10px 30px rgba(0,0,0,0.5); */
+
+            
+            /* background-image: url('img/background-img.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed; */
+            
+            
+            /* background-size: cover; */
+
         }
 
 
@@ -81,7 +115,7 @@
         /* 상태 메시지 및 결과 텍스트 */
         #status {
             /* transform: translate(-50%, -50%); */
-            position: absolute; top: 5%; left:2%; font-weight: bold;
+            position: absolute; top: 5%; left:4%; font-weight: bold;
             /* background: rgba(0,0,0,0.5);  */
             color: #000;
             padding: 5px 15px; border-radius: 5px; font-size: 13px;
@@ -205,8 +239,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: #fdfae5; /* 통장 속지와 비슷한 따뜻한 흰색 */
-    border: 2px solid #b2a3b0;
+    background: #F2F2F2; /* 통장 속지와 비슷한 따뜻한 흰색  #fdfae5*/
+    border: 2px solid #AAB6BE; /* #b2a3b0 */
     color: #2c3e50;
     font-weight: bold;
     font-size: 1.2rem;
@@ -223,8 +257,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: #dac6cc; /* 맵 블록 옆면과 통일감 있는 색상 */
-    border: 2px solid #888294;
+    background: #AAB6BE; /* 맵 블록 옆면과 통일감 있는 색상 #dac6cc*/
+    border: 2px solid #839AA1; /* #888294 */
     border-radius: 8px;
     transform: translateZ(0);
 }
@@ -304,8 +338,8 @@
         
         <!-- <button id="roll-btn" type="button" disabled>🎲</button> -->
     </div>
-
-    <div id="bankruptcy-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;">
+    <!-- background: rgba(0,0,0,0.85); -->
+    <div id="bankruptcy-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;">
         <h1 style="font-size: 50px; color: #e74c3c; margin-bottom: 10px;">BANKRUPT</h1>
         <p id="bankrupt-msg" style="font-size: 18px; margin-bottom: 30px;">자금이 부족하여 파산하였습니다.</p>
         <button onclick="location.reload()" style="padding: 15px 30px; background: #3498db; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 16px;">처음으로 돌아가기</button>
