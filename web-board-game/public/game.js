@@ -688,6 +688,34 @@ function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 
         animate();
     });
 }
+/**
+ * 커스텀 모달을 띄우고 사용자의 선택을 Promise로 반환하는 함수
+ */
+function showCustomModal(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-modal');
+        const titleElem = document.getElementById('modal-title');
+        const msgElem = document.getElementById('modal-message');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+
+        titleElem.innerText = title;
+        msgElem.innerText = message;
+        modal.style.display = 'flex';
+
+        // 확인 클릭 시
+        confirmBtn.onclick = () => {
+            modal.style.display = 'none';
+            resolve(true);
+        };
+
+        // 취소 클릭 시
+        cancelBtn.onclick = () => {
+            modal.style.display = 'none';
+            resolve(false);
+        };
+    });
+}
 // 3. 이벤트 리스너 등록 및 초기 실행
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
@@ -788,20 +816,23 @@ socket.on('start-teleport', () => {
     render(); 
 });
 
-socket.on('ask-buy-land', (data) => {
-    setTimeout(() => {
-        if (confirm(`${data.name}(${data.price}만원)을 구매하시겠습니까?`)) {
-            socket.emit('buy-land', data.index);
-        }
-    }, 300);
+socket.on('ask-buy-land', async (data) => {
+    // 0.3초 대기 후 커스텀 모달 호출
+    await new Promise(r => setTimeout(r, 300));
+    const confirmed = await showCustomModal("부동산 매입", `${data.name}(${data.price}만원)을 구매하시겠습니까?`);
+    
+    if (confirmed) {
+        socket.emit('buy-land', data.index);
+    }
 });
 
-socket.on('ask-build-building', (data) => {
-    setTimeout(() => {
-        if (confirm(`${data.name}에 [ ${data.buildingName} ]을 짓겠습니까? (건물 비용: ${data.cost}만원)`)) {
-            socket.emit('build-building', data);
-        }
-    }, 100);
+socket.on('ask-build-building', async (data) => {
+    await new Promise(r => setTimeout(r, 100));
+    const confirmed = await showCustomModal("건물 건설", `${data.name}에 [${data.buildingName}]을 짓겠습니까?\n(비용: ${data.cost}만원)`);
+    
+    if (confirmed) {
+        socket.emit('build-building', data);
+    }
 });
 
 socket.on('turn-change', (activePlayerId) => {

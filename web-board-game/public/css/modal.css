@@ -1,0 +1,46 @@
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #FBFFF4; padding: 25px; 
+    text-align: center; min-width: 300px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    /* border: 4px solid #2c3e50; */
+    border-radius: 5px;
+
+    position: relative; /* 자식 요소 배치를 위해 추가 */
+    padding: 15px 25px 25px 25px;
+}
+#modal-title {
+    margin: 0;
+     margin-bottom: 0px;
+    font-size: 1.2em; color: #2c3e50;
+
+    border-left: 5px solid #27ae60;
+    padding-left: 15px;
+    text-align: left;
+}
+/* 제목 아래 구분선 스타일 */
+.modal-divider {
+    width: 100%;              /* 선의 가로 길이 */
+    height: 3px;             /* 선의 두께 */
+    background: linear-gradient(to right, transparent, #2c3e50, transparent); /* 가운데만 진한 그라데이션 */
+    margin: 15px auto;       /* 제목과의 간격 및 중앙 정렬 */
+    border-radius: 2px;      /* 선 끝을 살짝 둥글게 */
+}
+#modal-message {
+    font-size: 0.9em; margin-bottom: 20px; color: #34495e;
+}
+
+.modal-buttons { margin-top: 20px; display: flex; gap: 10px; justify-content: center; }
+
+button {
+    padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
+}
+
+#modal-confirm-btn { background: #c7728b; color: white; }
+#modal-cancel-btn { background: #d6b9c2; color: white; }
