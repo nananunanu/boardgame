@@ -92,7 +92,7 @@ function updateMapData() {
     // centerX에서 가로 폭의 절반을 빼지 않고, 
     // 다이아몬드 꼭짓점 기준 좌표계로 다시 잡습니다.
     const startX = centerX; 
-    const startY = centerY - (totalMapHeight / 2) - 40; //세로 위치조정 +는 내림 -는 올림
+    const startY = centerY - (totalMapHeight / 2) - 32; //세로 위치조정 +는 내림 -는 올림
 
     const stepX = TILE_W / 2;
     const stepY = TILE_H / 2;
@@ -131,8 +131,8 @@ function updateMapData() {
 
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    const logicalWidth = window.innerWidth - 0; //타일 크기 조정 상수
-    const logicalHeight = window.innerHeight - 0;
+    const logicalWidth = window.innerWidth + 50; //타일 크기 조정 상수
+    const logicalHeight = window.innerHeight + 50;
 
     canvas.width = logicalWidth * dpr;
     canvas.height = logicalHeight * dpr;
@@ -143,7 +143,7 @@ function resizeCanvas() {
     // 정사각형 다이아몬드 배치를 위해 타일 크기 최적화
     // 전체 맵 너비가 화면 너비의 90% 정도 차지하도록 설정
     TILE_W = (logicalWidth * 0.7) / (COL_COUNT - 1);
-    TILE_H = TILE_W * 0.5; // 3D 느낌을 위해 가로세로 비율 조정 (0.5~0.6 추천)
+    TILE_H = TILE_W * 0.45; // 3D 느낌을 위해 가로세로 비율 조정 (0.5~0.6 추천)
 
     updateMapData();
     render();
@@ -158,15 +158,35 @@ function drawMahjongTile(tile, info, index) {
     const blockTopLineColor = "#B2A3B0"
     const blockSideColor = "#DAC6CC"
     const blockSideLineColor = "#888294"
+    const tileNameFontSize = 0.27; // 타일 이름 글꼴 크기 (타일 높이 대비 비율)
     
     const padding = 1;
     const x = tile.x;
     const y = tile.y;
     const w = TILE_W;
     const h = TILE_H;
-    const depth = 30; // 블록의 두께 (입체감)
+    const depth = 20; // 블록의 두께 (입체감)
     const centerX = x + w / 2;
     const centerY = y + h / 2;
+    
+    // 1.5. 타일 아래 그림자 (우측상단에서 빛이 들어온다고 가정 - 상판과 동일한 마름모 형태)
+    // shadowOffsetX/Y를 통해 수평/수직 이동을 조절할 수 있음
+    
+    // const shadowOffsetX = -21; // *이건 맵이 바닥에 붙어있는 느낌을 주는 그림자
+    // const shadowOffsetY = 30; // *이건 맵이 바닥에 붙어있는 느낌을 주는 그림자
+
+    const shadowOffsetX = 0;   // 그림자 가로 이동
+    const shadowOffsetY = 70;  // 그림자 세로 이동 (깊이)
+    const shadowColor = "rgba(0, 0, 0, 0.15)"; // 반투명 검은색
+    ctx.fillStyle = shadowColor;
+    ctx.beginPath();
+    // 상단 마름모 좌표에서 X/Y 각각 오프셋 추가
+    ctx.moveTo(centerX + shadowOffsetX, y + shadowOffsetY);             // 위점
+    ctx.lineTo(x + w + shadowOffsetX, centerY + shadowOffsetY);         // 오른쪽
+    ctx.lineTo(centerX + shadowOffsetX, y + h + shadowOffsetY);         // 아래점
+    ctx.lineTo(x + shadowOffsetX, centerY + shadowOffsetY);             // 왼쪽
+    ctx.closePath();
+    ctx.fill();
 
     // 1. 블록 옆면 (입체 두께) - 먼저 그려야 상판에 가려짐
     ctx.fillStyle = blockSideColor; // 블록 옆면 색상 #bdc3c7
@@ -203,6 +223,96 @@ function drawMahjongTile(tile, info, index) {
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
+    
+        // 3. 건물 표시 (Isometric 형태 - 타일 등각투영 축에 맞춰 배치)
+        // buildingLevel: 0 none, 1 별장, 2 빌라, 3 호텔
+        if (info.buildingLevel && info.buildingLevel > 0) {
+            const n = Math.min(info.buildingLevel, 3);
+            const buildingW = TILE_W * 0.28;
+            const buildingH = TILE_H * 0.18;
+            const buildingDepth = buildingH * 1;
+
+            // 타일 내부에서 건물 그룹을 조금 이동시키고 싶을 때 사용할 오프셋
+            // 좌측하단으로 이동하려면 X는 음수, Y는 양수 방향을 주면 됩니다.
+            // 여기에서는 좌하단으로 살짝 이동시키는 예를 넣어둠.
+            const buildingShiftX = TILE_W * 0.1; // 타일 너비의 10% 만큼 왼쪽으로
+            const buildingShiftY = TILE_H * 0.2;  // 타일 높이의 5% 만큼 아래로
+
+            // 타일의 상단(마름모 위점)을 기준점으로 사용
+            // topX/topY에 각각 오프셋을 주어 건물 묶음의 시작점을 조절할 수 있습니다.
+            const topX = centerX + buildingShiftX;            // 위점 X에 shift 적용
+            const topY = y + TILE_H * 0.15 + buildingShiftY; // 위점 Y에 shift 적용
+
+            // 등각 축 방향 벡터 (top -> right)
+            const rightVx = (x + w) - topX; // 보통 w/2
+            const rightVy = centerY - topY; // 보통 h/2 - small
+            const dirLen = Math.hypot(rightVx, rightVy) || 1;
+            const ux = rightVx / dirLen;
+            const uy = rightVy / dirLen;
+
+            // 화면상의 수평 거리(buildingW)만큼 이동시키기 위한 dx,dy 계산
+            // dx를 buildingW * factor로 증가시키고, 그에 따른 y이동을 uy/ux 비율로 보정
+
+            // 겹치기 비율: 0.0(붙음) ~ 0.5(절반 겹침)
+            const overlap = n > 1 ? 0.3 : 0;
+            for (let i = 0; i < n; i++) {
+                const factor = i - (n - 1) / 2; // -1,0,1 for n=3 etc.
+                const dx = buildingW * factor * (1 - overlap);
+                const bx = topX + dx;
+                // 타일 상단-우측 선에 bx 위치 계산 후 그에 상응하는 y 얻기
+                const rightX = x + w;
+                const rightY = centerY;
+                let by;
+                if (rightX !== topX) {
+                    const t = (bx - topX) / (rightX - topX);
+                    by = topY + t * (rightY - topY);
+                } else {
+                    by = topY;
+                }
+
+                // 색상 결정
+                let buildingColor, buildingDarkColor;
+                if (i === 0) { // 별장
+                    buildingColor = "#f5e6d3";
+                    buildingDarkColor = "#d4b896";
+                } else if (i === 1) { // 빌라
+                    buildingColor = "#c4b3a4";
+                    buildingDarkColor = "#b8a08a";
+                } else { // 호텔
+                    buildingColor = "#ffd700";
+                    buildingDarkColor = "#daa520";
+                }
+
+                // 옆면(어두운 면)
+                ctx.fillStyle = buildingDarkColor;
+                ctx.beginPath();
+                ctx.moveTo(bx - buildingW / 2, by);
+                ctx.lineTo(bx - buildingW / 2, by - buildingDepth);
+                ctx.lineTo(bx, by - buildingDepth - buildingH / 2);
+                ctx.lineTo(bx + buildingW / 2, by - buildingDepth);
+                ctx.lineTo(bx + buildingW / 2, by);
+                ctx.lineTo(bx, by + buildingH / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = "#666";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 지붕(마름모)
+                ctx.fillStyle = buildingColor;
+                ctx.beginPath();
+                ctx.moveTo(bx, by - buildingDepth - buildingH / 2);
+                ctx.lineTo(bx + buildingW / 2, by - buildingDepth);
+                ctx.lineTo(bx, by + buildingH / 2);
+                ctx.lineTo(bx - buildingW / 2, by - buildingDepth);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = "#333";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
     // 3. 내부 텍스트 및 정보
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -215,7 +325,7 @@ function drawMahjongTile(tile, info, index) {
     if (index === 23) title = "💸 " + title; // 세금
 
     ctx.fillStyle = "#2c3e50";
-    ctx.font = `bold ${Math.floor(TILE_H * 0.28)}px sans-serif`;
+    ctx.font = `bold ${Math.floor(TILE_H * tileNameFontSize)}px sans-serif`;
     ctx.fillText(title, centerX, centerY - TILE_H * 0.1);
 
     // 가격/소유주 표시
@@ -244,7 +354,7 @@ function drawMahjongTile(tile, info, index) {
     // 4. 세계일주 텔레포트 중일 때 강조 (노란 후광)
     if (isTeleporting) {
         ctx.strokeStyle = "rgba(241, 196, 15, 0.8)";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(centerX, y - 5);
         ctx.lineTo(x + w + 5, centerY);
@@ -253,6 +363,7 @@ function drawMahjongTile(tile, info, index) {
         ctx.closePath();
         ctx.stroke();
     }
+
 }
 function draw3DDice(ctx, x, y, size, value, rotation, yOffset) {
     ctx.save();
@@ -325,39 +436,150 @@ function render() {
         drawMahjongTile(tile, info, index);
     });
 
-    // 2. 플레이어 말 그리기
+    // 2. 플레이어 말 그리기 (중복된 칸일 때 위치 오프셋 및 점프 애니메이션 적용)
     Object.keys(players).forEach(id => {
         const p = players[id];
         const pos = mapData[p.position];
         if (!pos) return;
 
-        const centerX = pos.x + TILE_W / 2;
-        const centerY = pos.y + TILE_H / 2;
-        const pieceRadius = Math.min(TILE_W, TILE_H) * 0.2;
+        // 애니메이션 중이면 애니메이션 포지션 사용
+        let centerX, centerY;
+        if (p.animX !== undefined && p.animY !== undefined) {
+            centerX = p.animX + TILE_W / 2;
+            centerY = p.animY + TILE_H / 2;
+        } else {
+            centerX = pos.x + TILE_W / 2;
+            centerY = pos.y + TILE_H / 2;
+        }
+        
+        // 동일 칸에 있는 플레이어 목록을 구하고, 각자의 인덱스를 찾음
+        const playersHere = Object.values(players).filter(pl => pl.position === p.position);
+        const idx = playersHere.findIndex(pl => pl.id === id || pl === p);
+        // 오프셋 거리 (플레이어 크기의 절반 정도)
+        const offsetStep = Math.min(TILE_W, TILE_H) * 0.25;
+        const offsetX = (idx - (playersHere.length - 1) / 2) * offsetStep;
+        // y-offset은 조금 더 작게 해서 위아래로 추가 분산
+        const offsetStepY = offsetStep * 0.4;
+        const offsetY = (idx - (playersHere.length - 1) / 2) * offsetStepY;
 
+        // 캐릭터 크기 기준값 (기존 pieceRadius와 유사한 스케일)
+        const scale = Math.min(TILE_W, TILE_H) * 0.5;
+
+        // 점프 오프셋 추가
+        const jumpOffset = p.animOffset || 0;
+        ctx.save();
+        ctx.translate(centerX + offsetX, centerY - scale + offsetY - jumpOffset); // 위치에 오프셋을 추가
         ctx.globalAlpha = p.lockedTurns > 0 ? 0.5 : 1.0;
 
-        // 플레이어 캐릭터 (입체감을 위해 그림자 추가)
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = "rgba(0,0,0,0.4)";
+        // 1. 그림자 효과
+        
+        
+        // 2. 진저브레드 [용감한맛 쿠키] 몸체 그리기 시작
+        ctx.strokeStyle = p.color; // 플레이어 고유 색상
         ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, pieceRadius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
-        // 닉네임 표시
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "rgba(0,0,0,0.9)";
+
+        // --- 팔 (선으로 연결된 진저브레드 스타일) ---
+        ctx.lineWidth = scale * 0.3;
+        
+        // 왼팔
+        ctx.beginPath();
+        ctx.moveTo(-scale * 0.25, -scale * 0.1);
+        ctx.lineTo(-scale * 0.55, -scale * 0.05);
+        ctx.stroke();
+        // 왼손 (팔 끝의 둥근 원)
+        ctx.beginPath();
+        ctx.arc(-scale * 0.55, -scale * 0.05, scale * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 오른팔
+        ctx.beginPath();
+        ctx.moveTo(scale * 0.25, -scale * 0.1);
+        ctx.lineTo(scale * 0.55, -scale * 0.05);
+        ctx.stroke();
+        // 오른손 (팔 끝의 둥근 원)
+        ctx.beginPath();
+        ctx.arc(scale * 0.55, -scale * 0.05, scale * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // --- 다리 (선으로 연결된 진저브레드 스타일) ---
+        // 왼다리
+        const legheight = scale * 0.6
+        ctx.beginPath();
+        ctx.moveTo(-scale * 0.18, scale * 0.25);
+        ctx.lineTo(-scale * 0.25, legheight);
+        ctx.stroke();
+        // 왼발 (다리 끝의 둥근 원)
+        ctx.beginPath();
+        ctx.arc(-scale * 0.25, legheight, scale * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 오른다리
+        ctx.beginPath();
+        ctx.moveTo(scale * 0.18, scale * 0.25);
+        ctx.lineTo(scale * 0.25, legheight);
+        ctx.stroke();
+        // 오른발 (다리 끝의 둥근 원)
+        ctx.beginPath();
+        ctx.arc(scale * 0.25, legheight, scale * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        // --- 몸통 및 머리 ---
+        // 큰 몸통 (쿠키의 메인 몸체)
+        ctx.beginPath();
+        ctx.arc(0, 0, scale * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 6;
+        // 머리 (몸통 위에 맞붙음)
+        ctx.beginPath();
+        ctx.arc(0, -scale * 0.45, scale * 0.38, 0, Math.PI * 2);
+        ctx.fill();
+
+
+        // --- 표정: 눈과 눈썹 (화난 표정) ---
+        ctx.shadowBlur = 0; // 장식엔 그림자 제거
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = scale * 0.06;
+        ctx.lineCap = "round";
+        
+        // 왼쪽 눈 (/)
+        ctx.beginPath();
+        ctx.moveTo(-scale * 0.1, -scale * 0.50);
+        ctx.lineTo(-scale * 0.15, -scale * 0.55); // 각도를 낮춤 (덜 수직)
+        ctx.stroke();
+        
+        // 오른쪽 눈 (\)
+        ctx.beginPath();
+        ctx.moveTo(scale * 0.15, -scale * 0.55); // 각도를 낮춤 (덜 수직)
+        ctx.lineTo(scale * 0.1, -scale * 0.50);
+        ctx.stroke();
+
+        // 입 (아래로 향하는 반원, 끝점들을 선으로 이어 닫힌 형태)
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = scale * 0.05;
+        ctx.beginPath();
+        // 아래로 향하는 반원으로 설정 (원래의 웃는 모양)
+        ctx.arc(0, -scale * 0.36, scale * 0.2, 0, Math.PI, false);
+        // 끝점들 사이를 직선으로 이어 닫힌 형태로 만듦
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 4. 닉네임 표시 (위치만 살짝 조정)
         ctx.fillStyle = "#000";
         const displayName = p.lockedTurns > 0 ? `🏝️ ${p.name}` : p.name;
-        ctx.font = `bold ${Math.floor(pieceRadius * 0.9)}px sans-serif`;
+        ctx.font = `bold ${Math.floor(scale * 0.6)}px sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText(displayName, centerX, centerY - pieceRadius - 10);
+        ctx.fillText(displayName, centerX, centerY - (scale * 2));
         
         ctx.globalAlpha = 1.0;
-
 
         // 주사위 애니메이션이 활성 상태일 때만 중앙에 그림
         if (diceAnim.showResult) {
@@ -432,14 +654,38 @@ function updatePersonalUI() {
 // }
 function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 애니메이션을 위한 함수
     return new Promise((resolve) => {
-        setTimeout(() => {
-            // 현재 위치에서 한 칸 전진 (원형 리스트 순환)
-            if (players[playerId]) {
-                players[playerId].position = (players[playerId].position + 1) % mapData.length;
-                render(); // 화면 갱신 (말 위치 변경 반영)
+        const player = players[playerId];
+        if (!player) return resolve();
+        const startIdx = player.position;
+        const nextIdx = (startIdx + 1) % mapData.length;
+        const from = mapData[startIdx];
+        const to = mapData[nextIdx];
+        const frames = 30; // 점프속도 조절
+        let frame = 0;
+
+        function animate() {
+            frame++;
+            const t = frame / frames;
+            // 선형 보간
+            player.animX = from.x + (to.x - from.x) * t;
+            player.animY = from.y + (to.y - from.y) * t;
+            // 점프 곡선
+            player.animOffset = Math.sin(t * Math.PI) * Math.min(TILE_W, TILE_H) * 0.5; // 높이조정 상수
+
+            render();
+            if (frame < frames) {
+                requestAnimationFrame(animate);
+            } else {
+                // 애니메이션 종료
+                delete player.animX;
+                delete player.animY;
+                delete player.animOffset;
+                player.position = nextIdx;
+                render();
+                resolve();
             }
-            resolve();
-        }, 300); // 0.3초마다 한 칸씩 이동
+        }
+        animate();
     });
 }
 // 3. 이벤트 리스너 등록 및 초기 실행
@@ -465,12 +711,12 @@ socket.on('update-players', (serverPlayers) => {
 });
 
 socket.on('connect', () => {
-    statusText.innerText = `내 ID: ${socket.id} (접속됨)`;
+    // statusText.innerText = `내 ID: ${socket.id} (접속됨)`;
 });
 
 // game.js 에 로그 수신 이벤트 추가
 socket.on('game-log', (msg) => {
-    resultText.innerText = msg; // 결과 텍스트창에 통행료 알림 표시
+    statusText.innerText = msg;
     console.log(msg);
 });
 
@@ -549,6 +795,14 @@ socket.on('ask-buy-land', (data) => {
     }, 300);
 });
 
+socket.on('ask-build-building', (data) => {
+    setTimeout(() => {
+        if (confirm(`${data.name}에 [ ${data.buildingName} ]을 짓겠습니까? (건물 비용: ${data.cost}만원)`)) {
+            socket.emit('build-building', data);
+        }
+    }, 100);
+});
+
 socket.on('turn-change', (activePlayerId) => {
     currentTurnId = activePlayerId; // 현재 턴 ID를 전역 변수에 저장
     console.log("현재 턴:", activePlayerId);
@@ -560,12 +814,12 @@ socket.on('turn-change', (activePlayerId) => {
         }
         rollBtn.disabled = ENABLE;
         turnText.innerText = "YOUR TURN.";
-        statusText.style.color = "#6cd668";
+        resultText.innerText = "주사위를 굴려주세요!";
     } else {
         rollBtn.disabled = DISABLE;
         const opponentName = players[activePlayerId] ? players[activePlayerId].name : "상대방";
         turnText.innerText = `WAIT.`;
-        statusText.style.color = "red";
+        resultText.innerText = `${opponentName}님의 턴입니다.`;
     }
     // updateLeaderboard();
 });

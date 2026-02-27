@@ -17,39 +17,39 @@ app.use(express.static('public'));
 const mapInfo = [
     // 0~6: 상단 변 (7칸)
     { name: "출발지", price: 0, type: "start" }, // 0
-    { name: "타이베이", price: 50, type: "land", owner: null },
-    { name: "베이징", price: 80, type: "land", owner: null },
-    { name: "마닐라", price: 100, type: "land", owner: null },
-    { name: "제주도", price: 120, type: "land", owner: null },
-    { name: "싱가포르", price: 150, type: "land", owner: null },
-    { name: "방콕", price: 180, type: "land", owner: null },
+    { name: "타이베이", price: 50, type: "land", owner: null, buildingLevel: 0 },
+    { name: "베이징", price: 80, type: "land", owner: null, buildingLevel: 0 },
+    { name: "마닐라", price: 80, type: "land", owner: null, buildingLevel: 0 },
+    { name: "제주도", price: 100, type: "land", owner: null, buildingLevel: 0 },
+    { name: "싱가포르", price: 100, type: "land", owner: null, buildingLevel: 0 },
+    { name: "방콕", price: 120, type: "land", owner: null, buildingLevel: 0 },
 
     // 7~13: 우측 변 (7칸)
     { name: "무인도", price: 0, type: "special" }, // 7 (모서리)
-    { name: "델리", price: 200, type: "land", owner: null },
-    { name: "카이로", price: 220, type: "land", owner: null },
-    { name: "마드리드", price: 240, type: "land", owner: null },
-    { name: "아테네", price: 260, type: "land", owner: null },
-    { name: "로마", price: 280, type: "land", owner: null },
-    { name: "베를린", price: 300, type: "land", owner: null },
+    { name: "델리", price: 140, type: "land", owner: null, buildingLevel: 0 },
+    { name: "카이로", price: 140, type: "land", owner: null, buildingLevel: 0 },
+    { name: "마드리드", price: 160, type: "land", owner: null, buildingLevel: 0 },
+    { name: "아테네", price: 160, type: "land", owner: null, buildingLevel: 0 },
+    { name: "로마", price: 180, type: "land", owner: null, buildingLevel: 0 },
+    { name: "베를린", price: 200, type: "land", owner: null, buildingLevel: 0 },
 
     // 14~20: 하단 변 (7칸)
     { name: "사회복지", price: 0, type: "special" }, // 14 (모서리)
-    { name: "부산", price: 320, type: "land", owner: null },
-    { name: "시드니", price: 350, type: "land", owner: null },
-    { name: "상파울루", price: 380, type: "land", owner: null },
-    { name: "파리", price: 400, type: "land", owner: null },
-    { name: "런던", price: 420, type: "land", owner: null },
-    { name: "취리히", price: 450, type: "land", owner: null },
+    { name: "부산", price: 220, type: "land", owner: null, buildingLevel: 0 },
+    { name: "시드니", price: 240, type: "land", owner: null, buildingLevel: 0 },
+    { name: "상파울루", price: 240, type: "land", owner: null, buildingLevel: 0 },
+    { name: "파리", price: 260, type: "land", owner: null, buildingLevel: 0 },
+    { name: "런던", price: 260, type: "land", owner: null, buildingLevel: 0 },
+    { name: "취리히", price: 280, type: "land", owner: null, buildingLevel: 0 },
 
     // 21~27: 좌측 변 (7칸)
     { name: "세계여행", price: 0, type: "special" }, // 21 (모서리)
     { name: "찬스", price: 0, type: "special" }, // 22 (기존 요청 칸)
     { name: "국세청", price: 150, type: "special" }, // 23 (세금 징수)
-    { name: "토론토", price: 480, type: "land", owner: null },
-    { name: "로스앤젤레스", price: 520, type: "land", owner: null },
-    { name: "뉴욕", price: 550, type: "land", owner: null },
-    { name: "서울", price: 600, type: "land", owner: null }
+    { name: "", price: 330, type: "land", owner: null, buildingLevel: 0 },
+    { name: "로스앤젤레스", price: 340, type: "land", owner: null, buildingLevel: 0 },
+    { name: "뉴욕", price: 350, type: "land", owner: null, buildingLevel: 0 },
+    { name: "서울", price: 1000, type: "land", owner: null, buildingLevel: 0 }
 ];
 //========================================================================================socket========================================================================================
 io.on('connection', (socket) => {
@@ -63,7 +63,7 @@ io.on('connection', (socket) => {
             name: username, 
             position: 0, 
             color: color, 
-            money: 1000, // 시작 자금 1000만원 설정
+            money: 300, // 시작 자금 200만원 설정
             lockedTurns: 0
         };
         playerOrder.push(socket.id);
@@ -102,7 +102,7 @@ io.on('connection', (socket) => {
             return;
         }   
 
-        // 핵심: 서버에서 결과를 계산하여 모두에게 방송(Broadcast)
+        //서버에서 결과를 계산하여 모두에게 방송(Broadcast)
         io.emit('dice-result', { 
             playerId: socket.id, 
             value: diceValue, 
@@ -124,7 +124,7 @@ io.on('connection', (socket) => {
         handleMoveComplete(socket, finalPos);
     });
 
-    // 2. 땅 구매 요청 처리
+    // 땅 구매 요청 처리
     socket.on('buy-land', (tileIndex) => {
         const land = mapInfo[tileIndex];
         const player = players[socket.id];
@@ -135,7 +135,7 @@ io.on('connection', (socket) => {
             land.owner = socket.id; // 소유주 등록
             land.ownerName = player.name; // 렌더링용 이름
 
-            // 변경된 정보 모두에게 방송
+            // 변경된 정보 업데이트
             io.emit('update-players', players);
             io.emit('update-map', mapInfo);
             console.log(`${player.name}님이 ${land.name}을 구매했습니다.`);
@@ -144,14 +144,40 @@ io.on('connection', (socket) => {
     // [server.js] 텔레포트 요청 처리 추가
     socket.on('teleport-request', (targetIndex) => {
         const player = players[socket.id];
-        // 현재 위치가 세계일주(21번)이고, 본인 턴일 때만 허용
-        if (player && player.position === 21) {
+        
+        if (player && player.position === 21) { // 현재 위치가 세계일주(21번)이고, 본인 턴일 때만 허용
             player.position = targetIndex;
             
             io.emit('game-log', `✈️ ${player.name}님이 세계일주를 통해 ${mapInfo[targetIndex].name}(으)로 이동했습니다!`);
             
             handleMoveComplete(socket, targetIndex);
         }
+    });
+    socket.on('build-building', (data) => {
+        const tileIndex = data.index;
+        const land = mapInfo[tileIndex];
+        const player = players[socket.id];
+        const buildingCost = data.cost;
+
+        if (land.owner === socket.id && player.money >= buildingCost && land.buildingLevel == 0) {
+            player.money -= buildingCost;
+            land.buildingLevel = 1;
+            
+            io.emit('game-log', `${player.name}님이 ${land.name}에 [ 별장 ]을 지었습니다.`);
+        }
+        else if (land.owner === socket.id && player.money >= buildingCost && land.buildingLevel == 1) {
+            player.money -= buildingCost;
+            land.buildingLevel = 2;
+            io.emit('game-log', `${player.name}님이 ${land.name}에 [ 빌라 ]을 지었습니다.`);
+        }
+        else if (land.owner === socket.id && player.money >= buildingCost && land.buildingLevel == 2) {
+            player.money -= buildingCost;
+            land.buildingLevel = 3;
+            io.emit('game-log', `${player.name}님이 ${land.name}에 [ 호텔 ]을 지었습니다.`);
+        }
+
+        io.emit('update-map', mapInfo);
+        io.emit('update-players', players);
     });
     socket.on('disconnect', () => {
         if (players[socket.id]) {
@@ -169,7 +195,20 @@ io.on('connection', (socket) => {
 //========================================================================================socket========================================================================================
 
 //========================================================================================function========================================================================================
-// server.js 하단에 추가
+function buildBuilding(socket, tileIndex) {
+    const land = mapInfo[tileIndex];
+    const player = players[socket.id];
+    
+    const standardCost = land.price * 0.3; // 건물 기본 비용
+    
+    const buildingNames = ["별장", "빌라", "호텔"]; // 건물 레벨에 따른 이름 배열
+    const buildingCosts = [standardCost, land.price + standardCost / 6, standardCost * 2]; // 건물 레벨에 따른 비용 배열 (예시: 1레벨은 기본 비용, 2레벨은 땅값 + 기본비용/6, 3레벨은 기본 비용의 2배)
+
+    if (!land || !player) return;
+
+    socket.emit('ask-build-building', { name: land.name, buildingName: buildingNames[land.buildingLevel], cost: buildingCosts[land.buildingLevel], index: tileIndex }); // 건물 건설 의사 묻기
+
+}
 function handleMoveComplete(socket, finalPos) {
         const player = players[socket.id];
         if (!player) return;
@@ -180,7 +219,12 @@ function handleMoveComplete(socket, finalPos) {
         // ★ 통행료 지불 체크 ★
         if (land.type === 'land' && land.owner && land.owner !== socket.id) {
             const owner = players[land.owner];
-            const fee = Math.floor(land.price * 0.5); // 땅값의 50%를 통행료로 설정
+            const baseFee = Math.floor(land.price * 0.3); // 기본 통행료는 땅값의 30%
+
+            const fee = () => {
+                const mult = [1, 2, 5, 10][land.buildingLevel] || 0; // 건물 레벨에 따른 배수
+                return Math.floor(baseFee * mult);
+            };
 
             if (player.money >= fee) {
                 player.money -= fee;
@@ -197,6 +241,13 @@ function handleMoveComplete(socket, finalPos) {
         else if (land.type === 'land' && !land.owner && player.money >= land.price) {
             // 클라이언트에게 "구매 의사"를 물어보라고 신호를 보냄
             socket.emit('ask-buy-land', { index: finalPos, name: land.name, price: land.price });
+        }
+        else if (land.type === 'land' && land.owner === socket.id) {
+            
+            buildBuilding(socket, finalPos); // 건물 건설 시도 (소유주이므로 바로 시도)
+
+            console.log(`${player.name}님이 자신의 땅(${land.name})에 도착했습니다.`);
+            io.emit('game-log', `${player.name}님이 자신의 땅에 도착했습니다. 건물을 구매할 수 있습니다.`);
         }
         else if (finalPos === 7) {  // ★ 6번 칸 무인도 도착 체크
             player.lockedTurns = 3; // 3턴 동안 이동 불가
@@ -239,7 +290,7 @@ function handleBankruptcy(socketId) {
     const player = players[socketId];
     if (!player) return;
 
-    // 파산한 본인에게 알림창을 띄우라고 신호 보냄
+    // 파산한 본인에게 알림창 띄우기
     setTimeout(() => {
         io.emit('player-bankrupt', socketId);
     }, 2000)
@@ -247,7 +298,7 @@ function handleBankruptcy(socketId) {
     console.log(`[파산] ${player.name}님이 파산하였습니다.`);
     io.emit('game-log', `📢 ${player.name}님이 자금 부족으로 파산하였습니다!`);
 
-    // 1. 소유했던 모든 땅 초기화
+    // 소유했던 모든 땅 초기화
     mapInfo.forEach(tile => {
         if (tile.owner === socketId) {
             tile.owner = null;
@@ -255,16 +306,16 @@ function handleBankruptcy(socketId) {
         }
     });
 
-    // 2. 플레이어 목록 및 순서에서 제거
+    // 파산한 플레이어 목록 및 순서에서 제거
     delete players[socketId];
     playerOrder = playerOrder.filter(id => id !== socketId);
 
-    // 3. 턴 인덱스 보정 (사람이 줄었으므로 현재 인덱스가 범위를 넘지 않게)
+    // 턴 인덱스 보정 (사람이 줄었으므로 현재 인덱스가 범위를 넘지 않게)
     if (currentTurnIndex >= playerOrder.length) {
         currentTurnIndex = 0;
     }
 
-    // 4. 정보 갱신 방송
+    // 업데이트
     io.emit('update-players', players);
     io.emit('update-map', mapInfo);
     
