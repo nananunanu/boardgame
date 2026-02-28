@@ -64,7 +64,7 @@ io.on('connection', (socket) => {
             position: 0, 
             color: color, 
             money: 300, // 시작 자금 200만원 설정
-            lockedTurns: 0
+            lockedTurns: 0, // 무인도 갇힘 상태 체크용
         };
         playerOrder.push(socket.id);
 
@@ -147,37 +147,32 @@ io.on('connection', (socket) => {
         
         if (player && player.position === 21) { // 현재 위치가 세계일주(21번)이고, 본인 턴일 때만 허용
             player.position = targetIndex;
-            
+            player.isTeleportPending = false; // 텔레포트 대기 상태 해제
             io.emit('game-log', `✈️ ${player.name}님이 세계일주를 통해 ${mapInfo[targetIndex].name}(으)로 이동했습니다!`);
             
             handleMoveComplete(socket, targetIndex);
         }
     });
     socket.on('build-building', (data) => {
-        const tileIndex = data.index;
-        const land = mapInfo[tileIndex];
+        const { index, cost } = data;
+        const land = mapInfo[index];
         const player = players[socket.id];
-        const buildingCost = data.cost;
 
-        if (land.owner === socket.id && player.money >= buildingCost && land.buildingLevel == 0) {
-            player.money -= buildingCost;
-            land.buildingLevel = 1;
+        if (player.position !== index) return; // 현재 위치와 건물 지으려는 위치가 일치하는지 확인
+
+        if (player.money < cost) {
+            socket.emit('game-log', `🚫 ${player.name}님, 건물을 짓기에 돈이 부족합니다! (필요: ${cost}만원, 현재: ${player.money}만원)`);
+            return;
+        }
+        if (land.owner === socket.id && player.money >= cost && land.buildingLevel < 3) {
+            player.money -= cost;
+            land.buildingLevel += 1; // 레벨업
+            const buildingNames = ["", "별장", "빌라", "호텔"];
+            io.emit('game-log', `${player.name}님이 ${land.name}에 [ ${buildingNames[land.buildingLevel]} ]을 지었습니다.`);
             
-            io.emit('game-log', `${player.name}님이 ${land.name}에 [ 별장 ]을 지었습니다.`);
+            io.emit('update-map', mapInfo);
+            io.emit('update-players', players);
         }
-        else if (land.owner === socket.id && player.money >= buildingCost && land.buildingLevel == 1) {
-            player.money -= buildingCost;
-            land.buildingLevel = 2;
-            io.emit('game-log', `${player.name}님이 ${land.name}에 [ 빌라 ]을 지었습니다.`);
-        }
-        else if (land.owner === socket.id && player.money >= buildingCost && land.buildingLevel == 2) {
-            player.money -= buildingCost;
-            land.buildingLevel = 3;
-            io.emit('game-log', `${player.name}님이 ${land.name}에 [ 호텔 ]을 지었습니다.`);
-        }
-
-        io.emit('update-map', mapInfo);
-        io.emit('update-players', players);
     });
     socket.on('disconnect', () => {
         if (players[socket.id]) {
@@ -211,7 +206,7 @@ function buildBuilding(socket, tileIndex) {
 }
 function computeFee(price, level) {
   const mult = [1, 2, 5, 10][level] || 0;
-  return Math.floor(price / 3 * mult);
+  return Math.floor(price * mult);
 }
 function handleMoveComplete(socket, finalPos) {
         const player = players[socket.id];
@@ -225,7 +220,7 @@ function handleMoveComplete(socket, finalPos) {
             const owner = players[land.owner];
             const baseFee = Math.floor(land.price * 0.3); // 기본 통행료는 땅값의 30%
 
-            const fee = computeFee(land.price, land.buildingLevel); // 건물 레벨에 따른 통행료 계산
+            const fee = computeFee(baseFee, land.buildingLevel); // 건물 레벨에 따른 통행료 계산
 
             if (player.money >= fee) {
                 player.money -= fee;
@@ -266,7 +261,7 @@ function handleMoveComplete(socket, finalPos) {
             }
         }
         else if (finalPos === 21) {
-            socket.emit('start-teleport');
+            player.isTeleportPending = true; // 세계일주 대기 상태 설정
             io.emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
         }
         else if (finalPos === 23) { //  18번칸: 국세청 (기금적립)
@@ -282,12 +277,12 @@ function handleMoveComplete(socket, finalPos) {
                 io.emit('game-log', `💸 [징수] ${player.name}님이 잔액이 부족하여 남은 자산을 세금으로 납부했습니다.`);
             }
         }
+        io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
+        io.emit('update-taxpool', taxPool); // 사회복지기구 현 기금상태 업데이트
+
         // 턴 교대 알고리즘: (현재인덱스 + 1) % 전체인원
         currentTurnIndex = (currentTurnIndex + 1) % playerOrder.length;
         io.emit('turn-change', playerOrder[currentTurnIndex]);
-        
-        io.emit('update-players', players); // 변경된 상태(돈, 위치)를 모두에게 알림
-        io.emit('update-taxpool', taxPool); // 사회복지기구 현 기금상태 업데이트
 }
 function handleBankruptcy(socketId) {
     const player = players[socketId];
@@ -355,7 +350,8 @@ function resetGame() {
     // });
 
     // 3. 게임 시스템 변수 초기화
-    players = {}
+    players = {};
+    playerOrder = [];
     currentTurnIndex = 0;
     taxPool = 50;
 
@@ -363,7 +359,7 @@ function resetGame() {
     io.emit('update-map', mapInfo);
     io.emit('update-players', players);
     io.emit('update-taxpool', taxPool);
-    io.emit('turn-change', playerOrder[currentTurnIndex]);
+    io.emit('turn-change', null); // 턴 없음 상태로 초기화
 }
 //========================================================================================server========================================================================================
 const PORT = 8080;

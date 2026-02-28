@@ -691,7 +691,7 @@ function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 
 /**
  * 커스텀 모달을 띄우고 사용자의 선택을 Promise로 반환하는 함수
  */
-function showCustomModal(title, message) {
+function showCustomModal(title, message, isPayfee = false) {
     return new Promise((resolve) => {
         const modal = document.getElementById('custom-modal');
         const titleElem = document.getElementById('modal-title');
@@ -702,6 +702,15 @@ function showCustomModal(title, message) {
         titleElem.innerText = title;
         msgElem.innerText = message;
         modal.style.display = 'flex';
+
+        if (isPayfee) {
+            cancelBtn.style.display = 'none';
+            confirmBtn.innerText = "지불하기"; // 상황에 맞는 텍스트 변경
+        } else {
+            cancelBtn.style.display = 'inline-block';
+            confirmBtn.innerText = "확인";
+            cancelBtn.innerText = "취소";
+        }
 
         // 확인 클릭 시
         confirmBtn.onclick = () => {
@@ -732,10 +741,39 @@ socket.on('update-taxpool', (pool) => {
 
 // 서버로부터 플레이어 전체 정보를 동기화
 socket.on('update-players', (serverPlayers) => {
-    players = serverPlayers;
+    // 서버에서 전달된 유저가 아무도 없다면? (리셋되었다는 뜻)
+    if (Object.keys(serverPlayers).length === 0) {
+        players = {};
+        currentTurnId = "";
+        isMoving = false;
+        return;
+    }
+    // 1. 애니메이션 중이 아닌 플레이어들만 즉시 업데이트
+    // 2. 애니메이션 중인 플레이어는 '돈'이나 '상태'만 업데이트하고 'position'은 건드리지 않음
+    
+    Object.keys(serverPlayers).forEach(id => {
+        const serverPlayerData = serverPlayers[id];
+        const localPlayer = players[id];
+
+        if (localPlayer) {
+            // 위치(position)를 제외한 나머지 정보(돈, 색상, 이름 등) 업데이트
+            localPlayer.money = serverPlayerData.money;
+            localPlayer.name = serverPlayerData.name;
+            localPlayer.lockedTurns = serverPlayerData.lockedTurns;
+            localPlayer.isTeleportPending = serverPlayerData.isTeleportPending;
+
+            // 핵심: 애니메이션 중(animX가 있음)이 아닐 때만 위치를 동기화
+            if (localPlayer.animX === undefined) {
+                localPlayer.position = serverPlayerData.position;
+            }
+        } else {
+            // 처음 접속한 유저라면 통째로 저장
+            players[id] = serverPlayerData;
+        }
+    });
+
     render();
-    //updateLeaderboard(); // 현황판 갱신 함수 호출
-    updatePersonalUI()
+    updatePersonalUI();
 });
 
 socket.on('connect', () => {
@@ -807,15 +845,6 @@ async function startMove(playerId, value) {
         rollBtn.disabled = ENABLE;
     }
 }
-
-socket.on('start-teleport', () => {
-    isTeleporting = true;
-    statusText.innerText = "✈️ 세계일주! 이동할 칸을 클릭하세요.";
-    statusText.style.color = "#665617";
-    // 렌더링을 호출하여 캔버스에 선택 가이드(노란 테두리 등)를 표시
-    render(); 
-});
-
 socket.on('ask-buy-land', async (data) => {
     // 0.3초 대기 후 커스텀 모달 호출
     await new Promise(r => setTimeout(r, 300));
@@ -827,9 +856,10 @@ socket.on('ask-buy-land', async (data) => {
 });
 
 socket.on('ask-build-building', async (data) => {
+    if (!data.buildingName) return; // 건물 이름이 없으면 건물 건설을 하지 않음
     await new Promise(r => setTimeout(r, 100));
-    const confirmed = await showCustomModal("건물 건설", `${data.name}에 [${data.buildingName}]을 짓겠습니까?\n(비용: ${data.cost}만원)`);
     
+    const confirmed = await showCustomModal("건물 건설", `${data.name}에 [${data.buildingName}]을 짓겠습니까?\n(비용: ${data.cost}만원)`);
     if (confirmed) {
         socket.emit('build-building', data);
     }
@@ -841,18 +871,23 @@ socket.on('turn-change', (activePlayerId) => {
 
     if (socket.id === activePlayerId) {
         // 이동 중이 아닐 때만 즉시 활성화 (이동 중이면 dice-result 끝날 때 활성화됨)
-        if (!isMoving) {
-            
+        console.log(players[activePlayerId].isTeleportPending);
+        if (players[activePlayerId].isTeleportPending === true) {
+            isTeleporting = true; 
+            rollBtn.disabled = DISABLE; // 주사위 대신 클릭 유도
+            statusText.innerText = "✈️ 세계일주 차례입니다! 이동할 칸을 클릭하세요.";
+        } else {
+            rollBtn.disabled = ENABLE;
+            turnText.innerText = "YOUR TURN.";
+            resultText.innerText = "주사위를 굴려주세요!";
         }
-        rollBtn.disabled = ENABLE;
-        turnText.innerText = "YOUR TURN.";
-        resultText.innerText = "주사위를 굴려주세요!";
     } else {
         rollBtn.disabled = DISABLE;
         const opponentName = players[activePlayerId] ? players[activePlayerId].name : "상대방";
         turnText.innerText = `WAIT.`;
         resultText.innerText = `${opponentName}님의 턴입니다.`;
     }
+    render();
     // updateLeaderboard();
 });
 
