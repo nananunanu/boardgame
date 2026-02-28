@@ -46,13 +46,3 @@
 
         지불하기
 
-project/
-├── src/
-│   ├── constants/
-│   │   └── mapData.js      (상수: 맵 정보 저장)
-│   ├── logic/
-│   │   └── GameEngine.js   (순수 로직: 통행료 계산, 승패 판정)
-│   ├── socket/
-│   │   └── gameHandler.js  (통신: socket.on/emit 관리)
-│   └── server.js           (입구: Express/Server 설정)
-└── public/
