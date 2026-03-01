@@ -65,7 +65,7 @@
         #game-container { position: relative; display: flex; align-items: center; justify-content: center; }
 
         canvas { 
-            background: var(--board-bg); 
+            /* background: var(--board-bg);  */
             /* border: 3px solid #34495e;  */
             border-radius: 0px;
             /* box-shadow: 0 10px 30px rgba(0,0,0,0.5); */
@@ -350,6 +350,13 @@
                 <button id="modal-cancel-btn">취소</button>
                 <button id="modal-confirm-btn">확인</button>
             </div>
+        </div>
+    </div>
+    <div id="chance-card" class="chance-card-wrapper" style="display: none;">
+        <div class="chance-card-inner">
+            <p id="card-title" class="chance-title">제목</p>
+            <div class="modal-divider"></div>
+            <p id="card-description" class="chance-description">제목</p>
         </div>
     </div>
     <!-- background: rgba(0,0,0,0.85); -->

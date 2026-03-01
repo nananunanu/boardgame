@@ -44,3 +44,40 @@ button {
 
 #modal-confirm-btn { background: #c7728b; color: white; }
 #modal-cancel-btn { background: #d6b9c2; color: white; }
+
+
+
+/* =============================================================================== - 찬스카드 디자인*/
+
+
+.chance-card-wrapper {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+}
+
+.chance-card-inner {
+    background: linear-gradient(135deg, #f1c40f, #f39c12); /* 황금색 그라데이션 */
+    padding: 20px;
+    border-radius: 15px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    border: 5px solid #fff;
+}
+
+.chance-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.chance-title {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+
+
+
+
+

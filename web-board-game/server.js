@@ -6,6 +6,7 @@ const registerHandler = require(`./src/socket/gameHandler`); // 게임 관련 �
 const { INITIAL_MAP } = require(`./src/constants/mapData`);
 const { resetGame } = require('./src/utils/gameUtils');
 
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);

@@ -37,9 +37,9 @@ canvas.addEventListener('click', (event) => {
     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / dpr;
     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / dpr;
 
-    mapData.forEach((tile, index) => {
-        if (x >= tile.x && x <= tile.x + TILE_W &&
-            y >= tile.y && y <= tile.y + TILE_H) {
+    state.mapData.forEach((tile, index) => {
+        if (x >= tile.x && x <= tile.x + state.TILE_W &&
+            y >= tile.y && y <= tile.y + state.TILE_H) {
             
             state.isTeleporting = false;
             socket.emit('teleport-request', index);
@@ -83,6 +83,7 @@ const state = {
 const ENABLE = false;
 const DISABLE = true;
 
+// 이벤트 리스너 등록 및 초기 실행
 window.addEventListener('resize', () => {
     Renderer.resizeCanvas(state);
     Renderer.renderAll(state); // 계산 후 다시 그리기
@@ -181,7 +182,7 @@ function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 
 /**
  * 커스텀 모달을 띄우고 사용자의 선택을 Promise로 반환하는 함수
  */
-function showCustomModal(title, message, isPayfee = false) {
+function showCustomModal(title, message, condition = 0) {
     return new Promise((resolve) => {
         const modal = document.getElementById('custom-modal');
         const titleElem = document.getElementById('modal-title');
@@ -190,13 +191,21 @@ function showCustomModal(title, message, isPayfee = false) {
         const cancelBtn = document.getElementById('modal-cancel-btn');
 
         titleElem.innerText = title;
-        msgElem.innerText = message;
+        
         modal.style.display = 'flex';
 
-        if (isPayfee) {
+        if (condition === 1) {
+            msgElem.innerHTML = message;
             cancelBtn.style.display = 'none';
-            confirmBtn.innerText = "지불하기"; // 상황에 맞는 텍스트 변경
-        } else {
+            confirmBtn.innerText = "확인"; // 상황에 맞는 텍스트 변경
+        }         
+        else if (condition === 2) {
+            modal.innerHTML = message;
+            cancelBtn.style.display = 'none';
+            confirmBtn.style.display = 'none'; // 상황에 맞는 텍스트 변경
+        } 
+        else {
+            msgElem.innerHTML = message;
             cancelBtn.style.display = 'inline-block';
             confirmBtn.innerText = "확인";
             cancelBtn.innerText = "취소";
@@ -215,8 +224,23 @@ function showCustomModal(title, message, isPayfee = false) {
         };
     });
 }
-// 3. 이벤트 리스너 등록 및 초기 실행
+function showCustomModalChanceCard(title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('chance-card');
+        const titleElem = document.getElementById('card-title');
+        const msgElem = document.getElementById('card-description');
 
+        titleElem.innerText = title;
+        msgElem.innerHTML = message;
+        modal.style.display = 'flex';
+
+        setTimeout(() => {
+            modal.style.display = 'none';
+            resolve(true);
+        }, 3000); // 2초 후 자동으로 모달 닫기
+    
+    });
+}
 //========================================================================================socket========================================================================================
 socket.on('update-map', (serverMap) => {
     state.currentMap = serverMap;
@@ -333,8 +357,57 @@ async function startMove(playerId, value) {
         rollBtn.disabled = ENABLE;
     }
 }
+
+socket.on('showModalHandler-payFee', async (data) => {
+    if (data.isPayfee) {
+        const tableMessage = `
+            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+                <tr><td style="text-align:left;">소유주</td><td style="text-align:right;">${data.details.owner}</td></tr>
+                <tr><td style="text-align:left;">도시명</td><td style="text-align:right;">${data.details.city}</td></tr>
+                <tr style="border-bottom: 1px dashed #ccc;"><td colspan="2"></td></tr>
+                <tr><td style="text-align:left;">기본료</td><td style="text-align:right;">${data.details.baseFee}만</td></tr>
+                <tr><td style="text-align:left;">건물(${data.details.building})</td><td style="text-align:right;">x${data.details.multiplier}</td></tr>
+                <tr style="border-top: 2px solid #2c3e50; font-weight:bold; font-size:1.2em;">
+                    <td style="text-align:left;">총 금액</td><td style="text-align:right; color:#e74c3c;">${data.details.total}만원</td>
+                </tr>
+            </table>
+        `;
+        
+        // 기존 showCustomModal 호출 (innerHTML을 사용하는 버전이어야 함)
+        await new Promise(r => setTimeout(r, 300));
+        await showCustomModal(data.title, tableMessage, 1);
+    }
+});
+            
+// [game.js] 입금 확인 모달 (받는 유저용)
+socket.on('showModalHandler-notify-income', async (data) => {
+    const incomeHTML = `
+        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+            <tr><td style="text-align:left;">방문자(지불인)</td><td style="text-align:right;">${data.details.payerName}</td></tr>
+            <tr><td style="text-align:left;">소유주(수취인)</td><td style="text-align:right;">${data.details.owner}</td></tr>
+            <tr style="border-bottom: 1px dashed #ccc;"><td colspan="2"></td></tr>
+            <tr><td style="text-align:left;">기본료</td><td style="text-align:right;">${data.details.baseFee}만</td></tr>
+            <tr><td style="text-align:left;">건물(${data.details.building})</td><td style="text-align:right;">x${data.details.multiplier}</td></tr>
+            <tr style="border-top: 2px solid #2c3e50; font-weight:bold; font-size:1.2em;">
+                <td style="text-align:left;">총 금액</td><td style="text-align:right; color: #27ae60;">+${data.details.total}만원</td>
+            </tr>
+        </table>
+    `;
+
+    await new Promise(r => setTimeout(r, 300));
+    await showCustomModal(data.title, incomeHTML, 1);
+});
+// 찬스카드 모달
+socket.on('showModalHandler-chance-card', async (data) => { //❓
+    await new Promise(r => setTimeout(r, 300));
+    await showCustomModalChanceCard(data.title, `${data.description}(${data.name}님)`);
+});
+// 프리패스 모달
+socket.on('showModalHandler-freePass', async (data) => {
+    await new Promise(r => setTimeout(r, 300));
+    await showCustomModal(data.title, data.message, 2);
+});
 socket.on('ask-buy-land', async (data) => {
-    // 0.3초 대기 후 커스텀 모달 호출
     await new Promise(r => setTimeout(r, 300));
     const confirmed = await showCustomModal("부동산 매입", `${data.name}(${data.price}만원)을 구매하시겠습니까?`);
     
@@ -342,7 +415,6 @@ socket.on('ask-buy-land', async (data) => {
         socket.emit('buy-land', data.index);
     }
 });
-
 socket.on('ask-build-building', async (data) => {
     if (!data.buildingName) return; // 건물 이름이 없으면 건물 건설을 하지 않음
     await new Promise(r => setTimeout(r, 100));
@@ -360,7 +432,7 @@ socket.on('turn-change', (activePlayerId) => {
     if (socket.id === activePlayerId) {
         // 이동 중이 아닐 때만 즉시 활성화 (이동 중이면 dice-result 끝날 때 활성화됨)
         console.log(state.players[activePlayerId].isTeleportPending);
-        
+
         if (state.players[activePlayerId].isTeleportPending === true) {
             state.isTeleporting = true; 
             rollBtn.disabled = DISABLE; // 주사위 대신 클릭 유도

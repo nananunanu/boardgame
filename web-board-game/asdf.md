@@ -16,19 +16,12 @@ phaser라는 게임엔진이 있음. node 기반으로 돌아가는
 골드메탈 유튜버 - 게임이론을 잘 설명해주심 참고하면 좋음
 
 봄동 비빔밥 먹고싶다.
+아이스크림한박스 or 아이스크림케이크
 
-| 도시 통행료 청구서
-
-소유자: player
-도시명: ㅇㅇㅇ      | 100만원
-건물 수준: 호텔     | 40만원
-------------------------------
-총금액              | 140만원
-
-        지불하기
 
 Plaintext
-project/
+web-baord-game/
+├── node_modules
 ├── src/
 │   ├── constants/
 │   │   └── mapData.js      (상수: 맵 정보 저장)
@@ -38,3 +31,11 @@ project/
 │   │   └── gameHandler.js  (통신: socket.on/emit 관리)
 │   └── server.js           (입구: Express/Server 설정)
 └── public/
+        ├── css/
+        │       └── modal.css
+        ├── img/
+        └── js/
+                ├── animator.js
+                ├── game.js
+                ├── rederer.js
+                └── uiManager.js

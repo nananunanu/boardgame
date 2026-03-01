@@ -182,13 +182,29 @@ export const Renderer = {
     },
     drawMahjongTile(tile, info, index, state) {
         const { ctx, TILE_W, TILE_H, players, currentTaxPool, isTeleporting } = state;
+        const chanceTileColor = "#f39c12";
+        const chanceTileSideColor = "#c57f0e";
+
+        const islandTileColor = "#0ff15a";
+        const islandTileSideColor = "#0ba13d";
+
+        const airplaneTileColor = "#3498db";
+        const airplaneTileSideColor = "#246d9e";
+
+        const wellTileColor = "#9b59b6";
+        const wellTileSideColor = "#5a3369";
+
+        const taxPoolTileColor = "#e62f22";
+        const taxPoolTileSideColor = "#9b1f16";
+
+
+
         const blockTopColor = "#F2F2F2" //#FEECEB
         const blockTopLineColor = "#D0D3D8" //#B2A3B0
         const blockSideColor = "#AAB6BE" //#DAC6CC
         const blockSideLineColor = "#839AA1" //#888294
         const tileNameFontSize = 0.27; // 타일 이름 글꼴 크기 (타일 높이 대비 비율)
         
-        const padding = 1;
         const x = tile.x;
         const y = tile.y;
         const w = TILE_W;
@@ -217,7 +233,27 @@ export const Renderer = {
         ctx.fill();
 
         // 1. 블록 옆면 (입체 두께) - 먼저 그려야 상판에 가려짐
-        ctx.fillStyle = blockSideColor; // 블록 옆면 색상 #bdc3c7
+        if (index === 22) { // 찬스카드 칸은 특별한 색상
+            ctx.fillStyle = chanceTileSideColor;
+        }
+        else if (index === 7) { // 무인도 칸은 특별한 색상
+            ctx.fillStyle = islandTileSideColor;
+        }
+        else if (index === 14) { // 웰 칸은 특별한 색상
+            ctx.fillStyle = wellTileSideColor;
+        }
+        else if (index === 21) { // 세계일주 칸은 특별한 색상   
+            ctx.fillStyle = airplaneTileSideColor;
+        }
+        else if (index === 21) { // 세계일주 칸은 특별한 색상   
+            ctx.fillStyle = airplaneTileSideColor;
+        }
+        else if (index === 23) { // 세금 칸은 특별한 색상
+            ctx.fillStyle = taxPoolTileSideColor;
+        }
+        else {
+            ctx.fillStyle = blockSideColor; // 블록 옆면 색상 #bdc3c7
+        };
         ctx.beginPath();
         ctx.moveTo(x, centerY); // 왼쪽 끝
         ctx.lineTo(x, centerY + depth); 
@@ -234,7 +270,26 @@ export const Renderer = {
         // 소유자가 있으면 해당 유저 색상, 없으면 흰색 계열
         if (info.owner && players[info.owner]) {
             ctx.fillStyle = players[info.owner].color;
-        } else {
+        }
+        else if (index === 7) { // 무인도 칸은 특별한 색상
+            ctx.fillStyle = islandTileColor;
+        }
+        else if (index === 14) { // 웰 칸은 특별한 색상
+            ctx.fillStyle = wellTileColor;
+        }
+        else if (index === 21) { // 세계일주 칸은 특별한 색상   
+            ctx.fillStyle = airplaneTileColor;
+        }
+        else if (index === 22) { // 찬스카드 칸은 특별한 색상
+            ctx.fillStyle = chanceTileColor;
+        } 
+        else if (index === 21) { // 세계일주 칸은 특별한 색상   
+            ctx.fillStyle = airplaneTileSideColor;
+        }
+        else if (index === 23) { // 세금 칸은 특별한 색상
+            ctx.fillStyle = taxPoolTileColor;
+        }
+        else {
             ctx.fillStyle = blockTopColor;
         }
 
@@ -376,7 +431,7 @@ export const Renderer = {
         if (index === 23) {
             ctx.fillStyle = "#c0392b";
             ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
-            ctx.fillText(`150만`, centerX, centerY + TILE_H * 0.2);
+            ctx.fillText(`50만`, centerX, centerY + TILE_H * 0.2);
         }
 
         // 4. 세계일주 텔레포트 중일 때 강조 (노란 후광)

@@ -12,6 +12,7 @@ function resetGame(gameState) {
     // 2. 플레이어 관련 정보 초기화
     gameState.players = {};
     gameState.playerOrder = [];
+    gameState.freePass = 0;
     gameState.currentTurnIndex = 0;
 
     // 3. 기타 게임 시스템 변수 초기화
