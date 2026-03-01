@@ -1,0 +1,14 @@
+# 의존성 패키지 폴더 제외
+node_modules/
+
+# 로그 파일 제외
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 환경 변수 파일 (비밀 키 등) 제외
+.env
+
+# 운영체제 생성 파일 제외
+.DS_Store
+Thumbs.db
