@@ -14,7 +14,7 @@ module.exports = (io, socket, gameState) => {
             name: username,
             position: 0,
             color: color,
-            money: 300,
+            money: 400,
             lockedTurns: 0,
         };
         gameState.playerOrder.push(socket.id);
@@ -39,8 +39,8 @@ module.exports = (io, socket, gameState) => {
             return;
         }
 
-        // const diceValue = 1; // 테스트용 고정값
-        const diceValue = Math.floor(Math.random() * 6) + 1;
+        const diceValue = 21; // 테스트용 고정값
+        // const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % mapInfo.length;
 
@@ -160,7 +160,7 @@ function handleMoveComplete(io, socket, finalPos, gameState) {
                     baseFee: baseFee,
                     building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
                     multiplier: [1, 2, 4, 6][land.buildingLevel],
-                    total: fee
+                    total: `${fee}만원`
                 }
             });
             socket.to(land.owner).emit('showModalHandler-notify-income', {
@@ -169,7 +169,7 @@ function handleMoveComplete(io, socket, finalPos, gameState) {
                 details: {
                     owner: owner.name,
                     baseFee: baseFee,
-                    total: fee,
+                    total: `${fee}만원`,
                     multiplier: [1, 2, 4, 6][land.buildingLevel],
                     building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
                     landName: land.name,
@@ -178,6 +178,31 @@ function handleMoveComplete(io, socket, finalPos, gameState) {
             });
             io.emit('game-log', `💸 ${player.name} -> ${owner.name} 통행료 ${fee}만원 지불`);
         } else {
+            socket.emit('showModalHandler-payFee', {
+                title: "🧾 도시 통행료 청구서",
+                isPayfee: true,
+                details: {
+                    owner: owner.name,
+                    city: land.name,
+                    baseFee: baseFee,
+                    building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
+                    multiplier: [1, 2, 4, 6][land.buildingLevel],
+                    total: `${player.money}만원(파산)`
+                }
+            });
+            socket.to(land.owner).emit('showModalHandler-notify-income', {
+                title: "💰 입금 확인서",
+                isPayfee: true,
+                details: {
+                    owner: owner.name,
+                    baseFee: baseFee,
+                    total: `${player.money}만원(파산)`,
+                    multiplier: [1, 2, 4, 6][land.buildingLevel],
+                    building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
+                    landName: land.name,
+                    payerName: `${player.name}(파산)`
+                }
+            });
             owner.money += player.money;
             player.money = 0;
             handleBankruptcy(io, socket.id, gameState);
@@ -225,7 +250,7 @@ function processSpecialTile(io, player, pos, gameState) {
             player.isTeleportPending = true; // 세계일주 대기 상태 설정
             io.emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
     }
-    else if (pos === 22) {
+    else if (pos === 4 || pos === 18) {
             const randomIndex = Math.floor(Math.random() * ChanceCards.length);
             const card = ChanceCards[randomIndex];
 

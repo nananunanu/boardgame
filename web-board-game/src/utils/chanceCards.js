@@ -5,7 +5,7 @@ const ChanceCards = [
         description: "축하합니다. 연금 혜택으로 50만원을 받습니다.",
         action: (player) => { player.money += 50; }
     },
-        {
+    {
         id: 2,
         title: "💰 우승!",
         description: "자동차 경주에서 챔피언이 되었습니다. (당첨금 100만원을 받습니다.)",

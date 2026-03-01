@@ -27,25 +27,78 @@ rollBtn.onclick = () => {
     rollBtn.disabled = DISABLE
     socket.emit('roll-dice');
 };
+// canvas.addEventListener('click', (event) => {
+//     if (!state.isTeleporting) return;
+
+//     // 클릭한 좌표를 타일 인덱스로 변환
+//     const rect = canvas.getBoundingClientRect();
+//     const dpr = window.devicePixelRatio || 1;
+
+//     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / dpr;
+//     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / dpr;
+
+//     state.mapData.forEach((tile, index) => {
+//         if (x >= tile.x && x <= tile.x + state.TILE_W &&
+//             y >= tile.y && y <= tile.y + state.TILE_H) {
+            
+//             state.isTeleporting = false;
+//             socket.emit('teleport-request', index);
+//             Renderer.renderAll(state);
+//         }
+//     });
+// });
 canvas.addEventListener('click', (event) => {
+    // 텔레포트 모드가 아니면 무시
     if (!state.isTeleporting) return;
 
-    // 클릭한 좌표를 타일 인덱스로 변환
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    
+    /**
+     * [핵심 1] 논리적 좌표 계산
+     * Renderer에서 ctx.scale(dpr, dpr)을 사용 중이므로, 
+     * 마우스 좌표를 캔버스의 실제 픽셀 해상도가 아닌 'CSS 논리적 크기' 비율로만 맞춥니다.
+     */
+    const mouseX = (event.clientX - rect.left) * (rect.width === canvas.clientWidth ? 1 : canvas.clientWidth / rect.width);
+    const mouseY = (event.clientY - rect.top) * (rect.height === canvas.clientHeight ? 1 : canvas.clientHeight / rect.height);
 
-    const x = (event.clientX - rect.left) * (canvas.width / rect.width) / dpr;
-    const y = (event.clientY - rect.top) * (canvas.height / rect.height) / dpr;
+    const HALF_W = state.TILE_W / 2;
+    const HALF_H = state.TILE_H / 2;
 
-    state.mapData.forEach((tile, index) => {
-        if (x >= tile.x && x <= tile.x + state.TILE_W &&
-            y >= tile.y && y <= tile.y + state.TILE_H) {
-            
-            state.isTeleporting = false;
-            socket.emit('teleport-request', index);
-            Renderer.renderAll(state);
+    let targetIndex = -1;
+
+    // [핵심 2] 판정 루프
+    // Painter's Algorithm 역순(앞에 보이는 것부터)으로 검사합니다.
+    for (let i = state.mapData.length - 1; i >= 0; i--) {
+        const tile = state.mapData[i];
+
+        /**
+         * [핵심 3] 중심점 보정
+         * Renderer의 updateMapData를 보면:
+         * tile.x는 마름모의 왼쪽 끝점 좌표입니다.
+         * tile.y는 마름모의 위쪽 끝점 좌표입니다.
+         * 따라서 중심점(centerX, centerY)은 다음과 같습니다.
+         */
+        const centerX = tile.x + HALF_W;
+        const centerY = tile.y + HALF_H;
+
+        const dx = Math.abs(mouseX - centerX);
+        const dy = Math.abs(mouseY - centerY);
+
+        // 마름모 내부 판정 공식
+        if ((dx / HALF_W) + (dy / HALF_H) <= 1.0) {
+            targetIndex = i;
+            break; // 가장 위에 있는 타일을 찾으면 중단
         }
-    });
+    }
+
+    // 결과 처리
+    if (targetIndex !== -1) {
+        console.log(`선택된 타일 인덱스: ${targetIndex}`);
+        state.isTeleporting = false;
+        // 서버에 텔레포트 요청
+        socket.emit('teleport-request', targetIndex);
+        Renderer.renderAll(state);
+    }
 });
 const state = {
     // 1. 캔버스 및 컨텍스트 (그리기 도구)
@@ -368,7 +421,7 @@ socket.on('showModalHandler-payFee', async (data) => {
                 <tr><td style="text-align:left;">기본료</td><td style="text-align:right;">${data.details.baseFee}만</td></tr>
                 <tr><td style="text-align:left;">건물(${data.details.building})</td><td style="text-align:right;">x${data.details.multiplier}</td></tr>
                 <tr style="border-top: 2px solid #2c3e50; font-weight:bold; font-size:1.2em;">
-                    <td style="text-align:left;">총 금액</td><td style="text-align:right; color:#e74c3c;">${data.details.total}만원</td>
+                    <td style="text-align:left;">총 금액</td><td style="text-align:right; color:#e74c3c;">${data.details.total}</td>
                 </tr>
             </table>
         `;
@@ -389,7 +442,7 @@ socket.on('showModalHandler-notify-income', async (data) => {
             <tr><td style="text-align:left;">기본료</td><td style="text-align:right;">${data.details.baseFee}만</td></tr>
             <tr><td style="text-align:left;">건물(${data.details.building})</td><td style="text-align:right;">x${data.details.multiplier}</td></tr>
             <tr style="border-top: 2px solid #2c3e50; font-weight:bold; font-size:1.2em;">
-                <td style="text-align:left;">총 금액</td><td style="text-align:right; color: #27ae60;">+${data.details.total}만원</td>
+                <td style="text-align:left;">총 금액</td><td style="text-align:right; color: #27ae60;">+${data.details.total}</td>
             </tr>
         </table>
     `;

@@ -233,7 +233,7 @@ export const Renderer = {
         ctx.fill();
 
         // 1. 블록 옆면 (입체 두께) - 먼저 그려야 상판에 가려짐
-        if (index === 22) { // 찬스카드 칸은 특별한 색상
+        if (index === 4 || index === 18) { // 찬스카드 칸은 특별한 색상
             ctx.fillStyle = chanceTileSideColor;
         }
         else if (index === 7) { // 무인도 칸은 특별한 색상
@@ -241,9 +241,6 @@ export const Renderer = {
         }
         else if (index === 14) { // 웰 칸은 특별한 색상
             ctx.fillStyle = wellTileSideColor;
-        }
-        else if (index === 21) { // 세계일주 칸은 특별한 색상   
-            ctx.fillStyle = airplaneTileSideColor;
         }
         else if (index === 21) { // 세계일주 칸은 특별한 색상   
             ctx.fillStyle = airplaneTileSideColor;
@@ -271,6 +268,9 @@ export const Renderer = {
         if (info.owner && players[info.owner]) {
             ctx.fillStyle = players[info.owner].color;
         }
+        else if (index === 4 || index === 18) { // 찬스카드 칸은 특별한 색상
+            ctx.fillStyle = chanceTileColor;
+        }
         else if (index === 7) { // 무인도 칸은 특별한 색상
             ctx.fillStyle = islandTileColor;
         }
@@ -279,12 +279,6 @@ export const Renderer = {
         }
         else if (index === 21) { // 세계일주 칸은 특별한 색상   
             ctx.fillStyle = airplaneTileColor;
-        }
-        else if (index === 22) { // 찬스카드 칸은 특별한 색상
-            ctx.fillStyle = chanceTileColor;
-        } 
-        else if (index === 21) { // 세계일주 칸은 특별한 색상   
-            ctx.fillStyle = airplaneTileSideColor;
         }
         else if (index === 23) { // 세금 칸은 특별한 색상
             ctx.fillStyle = taxPoolTileColor;
@@ -425,12 +419,12 @@ export const Renderer = {
         // 특수 정보 (기금/세금 액수)
         if (index === 14) {
             ctx.fillStyle = "#e67e22";
-            ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+            ctx.font = `bold ${Math.floor(TILE_H * 0.26)}px sans-serif`;
             ctx.fillText(`${currentTaxPool}만`, centerX, centerY + TILE_H * 0.2);
         }
         if (index === 23) {
-            ctx.fillStyle = "#c0392b";
-            ctx.font = `bold ${Math.floor(TILE_H * 0.15)}px sans-serif`;
+            ctx.fillStyle = "#f0dbd8";
+            ctx.font = `bold ${Math.floor(TILE_H * 0.26)}px sans-serif`;
             ctx.fillText(`50만`, centerX, centerY + TILE_H * 0.2);
         }
 
