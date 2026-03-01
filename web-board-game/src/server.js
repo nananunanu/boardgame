@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 
 const registerHandler = require(`./socket/gameHandler`); // 게임 관련 소켓 핸들러
