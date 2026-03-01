@@ -16,6 +16,9 @@ module.exports = (io, socket, gameState) => {
             color: color,
             money: 400,
             lockedTurns: 0,
+            lockedTurnsPass: 0, // 무인도 탈출권 1회 제공
+            freePass: 0, // 통행료 면제권 1회 제공
+            isTeleportPending: false // 세계일주 대기 상태
         };
         gameState.playerOrder.push(socket.id);
 
@@ -32,15 +35,15 @@ module.exports = (io, socket, gameState) => {
         const player = players[activeId];
         
         // 무인도 체크
-        if (player.lockedTurns > 0) {
+        if (player.lockedTurns > 0 && player.lockedTurnsPass === 0) {
             player.lockedTurns--;
             io.emit('game-log', `🏝️ ${player.name}님은 무인도에 갇혀 있습니다. (남은 턴: ${player.lockedTurns})`);
             nextTurn(io, gameState);
             return;
         }
 
-        const diceValue = 21; // 테스트용 고정값
-        // const diceValue = Math.floor(Math.random() * 6) + 1;
+        // const diceValue = 4; // 테스트용 고정값
+        const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % mapInfo.length;
 
@@ -239,8 +242,15 @@ function handleMoveComplete(io, socket, finalPos, gameState) {
 
 function processSpecialTile(io, player, pos, gameState) {
     if (pos === 7) {
-        player.lockedTurns = 3;
-        io.emit('game-log', `🚨 ${player.name}님 무인도 도착!`);
+        if (player.lockedTurnsPass > 0) {
+            player.lockedTurnsPass -= 1;
+            io.emit('game-log', `🏝️ ${player.name}님이 무인도 탈출권을 사용하여 탈출했습니다.`);
+            return;
+        }
+        else {
+            player.lockedTurns = 3;
+            io.emit('game-log', `🚨 ${player.name}님 무인도 도착!`);
+        }
     } else if (pos === 14) {
         player.money += gameState.taxPool;
         io.emit('game-log', `🎉 ${player.name}님 기금 ${gameState.taxPool}만원 수령!`);
@@ -252,6 +262,7 @@ function processSpecialTile(io, player, pos, gameState) {
     }
     else if (pos === 4 || pos === 18) {
             const randomIndex = Math.floor(Math.random() * ChanceCards.length);
+            // const randomIndex = 14;
             const card = ChanceCards[randomIndex];
 
             card.action(player);

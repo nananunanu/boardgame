@@ -27,26 +27,6 @@ rollBtn.onclick = () => {
     rollBtn.disabled = DISABLE
     socket.emit('roll-dice');
 };
-// canvas.addEventListener('click', (event) => {
-//     if (!state.isTeleporting) return;
-
-//     // 클릭한 좌표를 타일 인덱스로 변환
-//     const rect = canvas.getBoundingClientRect();
-//     const dpr = window.devicePixelRatio || 1;
-
-//     const x = (event.clientX - rect.left) * (canvas.width / rect.width) / dpr;
-//     const y = (event.clientY - rect.top) * (canvas.height / rect.height) / dpr;
-
-//     state.mapData.forEach((tile, index) => {
-//         if (x >= tile.x && x <= tile.x + state.TILE_W &&
-//             y >= tile.y && y <= tile.y + state.TILE_H) {
-            
-//             state.isTeleporting = false;
-//             socket.emit('teleport-request', index);
-//             Renderer.renderAll(state);
-//         }
-//     });
-// });
 canvas.addEventListener('click', (event) => {
     // 텔레포트 모드가 아니면 무시
     if (!state.isTeleporting) return;
@@ -243,22 +223,27 @@ function showCustomModal(title, message, condition = 0) {
         const confirmBtn = document.getElementById('modal-confirm-btn');
         const cancelBtn = document.getElementById('modal-cancel-btn');
 
+        cancelBtn.style.display = 'flex';
+        confirmBtn.style.display = 'flex'; // 상황에 맞는 텍스트 변경
+
         titleElem.innerText = title;
-        
+        msgElem.innerHTML = message;    
         modal.style.display = 'flex';
 
         if (condition === 1) {
-            msgElem.innerHTML = message;
             cancelBtn.style.display = 'none';
             confirmBtn.innerText = "확인"; // 상황에 맞는 텍스트 변경
         }         
-        else if (condition === 2) {
-            modal.innerHTML = message;
+        else if (condition === 2) { //통행료 면제권 모달
             cancelBtn.style.display = 'none';
             confirmBtn.style.display = 'none'; // 상황에 맞는 텍스트 변경
+
+            setTimeout(() => {
+                modal.style.display = 'none';
+                resolve(true);
+            }, 2000); // 2초 후 자동으로 모달 닫기
         } 
         else {
-            msgElem.innerHTML = message;
             cancelBtn.style.display = 'inline-block';
             confirmBtn.innerText = "확인";
             cancelBtn.innerText = "취소";

@@ -84,16 +84,16 @@ const ChanceCards = [
         action: (player) => { player.position = 27; }
     },
     {
-        id: 14,
-        title: "관광여행",
-        description: "서울로 이동합니다. (서울 소유주에게 통행료를 지불합니다.)",
-        action: (player) => { player.position = 27; }
-    },
-    {
         id: 15,
         title: "통행료 면제권",
         description: "상대방이 소유한 땅에 도착했을 때, 통행료를 면제받습니다. (1회 적용)",
         action: (player) => { player.freePass = 1; }
+    },
+    {
+        id: 16,
+        title: "무인도 탈출권",
+        description: "무인도에 도착했을 때, 즉시 무인도에서 탈출합니다. (1회 적용)",
+        action: (player) => { player.lockedTurnsPass = 1; }
     },
     
     
