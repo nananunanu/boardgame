@@ -20,7 +20,7 @@ const gameState = {
     mapInfo: JSON.parse(JSON.stringify(INITIAL_MAP)) // 맵 정보 (소유주 등 동적 정보 포함)
 }
 resetGame(gameState);
-app.use(express.static('public'));
+app.use(express.static('../public'));
 
 io.on('connection', (socket) => {
     console.log(`New client connected: ${socket.id}`);
