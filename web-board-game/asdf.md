@@ -39,7 +39,3 @@ web-baord-game/
                 ├── game.js
                 ├── rederer.js
                 └── uiManager.js
-
-
-
-                ADFASDFA

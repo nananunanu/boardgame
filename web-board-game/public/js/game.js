@@ -18,8 +18,11 @@ if ('serviceWorker' in navigator) {
 //시작버튼 클릭시
 document.getElementById('start-btn').onclick = function() {
     // 접속 시 이름 입력받기
+    const roomId = prompt("입장할 방 번호를 입력하세요 (예: 1234)", "1234");
+    if (!roomId) return; // 취소 누르면 중단
+
     const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', myName);
+    socket.emit('join-game', roomId, myName);
     document.getElementById('start-overlay').style.display = 'none';
 };
 // 주사위 버튼 이벤트
@@ -289,37 +292,37 @@ socket.on('update-taxpool', (pool) => {
     Renderer.renderAll(state); // 기금 액수가 바뀌면 화면 다시 그리기
 });
 
-// 서버로부터 플레이어 전체 정보를 동기화
+// 서버로부터 플레이어 전체 정보를 동기화 (기존 코드 보완)
 socket.on('update-players', (serverPlayers) => {
-    // 서버에서 전달된 유저가 아무도 없다면? (리셋되었다는 뜻)
-    if (Object.keys(serverPlayers).length === 0) {
+    // 1. 리셋 처리
+    if (!serverPlayers || Object.keys(serverPlayers).length === 0) {
         state.players = {};
-        state.currentTurnId = "";
-        state.isMoving = false;
+        Renderer.renderAll(state);
         return;
     }
-    // 1. 애니메이션 중이 아닌 플레이어들만 즉시 업데이트
-    // 2. 애니메이션 중인 플레이어는 '돈'이나 '상태'만 업데이트하고 'position'은 건드리지 않음
-    
+
+    // 2. 동기화
     Object.keys(serverPlayers).forEach(id => {
-        const serverPlayerData = serverPlayers[id];
-        const localPlayer = state.players[id];
-
-        if (localPlayer) {
-            // 위치(position)를 제외한 나머지 정보(돈, 색상, 이름 등) 업데이트
-            localPlayer.money = serverPlayerData.money;
-            localPlayer.name = serverPlayerData.name;
-            localPlayer.lockedTurns = serverPlayerData.lockedTurns;
-            localPlayer.isTeleportPending = serverPlayerData.isTeleportPending;
-
-            // 핵심: 애니메이션 중(animX가 있음)이 아닐 때만 위치를 동기화
-            if (localPlayer.animX === undefined) {
-                localPlayer.position = serverPlayerData.position;
-            }
+        const sPlayer = serverPlayers[id];
+        if (!state.players[id]) {
+            state.players[id] = sPlayer;
         } else {
-            // 처음 접속한 유저라면 통째로 저장
-            state.players[id] = serverPlayerData;
+            // 위치(position)는 애니메이션 중일 때 덮어쓰지 않도록 주의
+            state.players[id].money = sPlayer.money;
+            state.players[id].name = sPlayer.name;
+            state.players[id].color = sPlayer.color;
+            state.players[id].lockedTurns = sPlayer.lockedTurns;
+            state.players[id].isTeleportPending = sPlayer.isTeleportPending;
+            
+            if (state.players[id].animX === undefined) {
+                state.players[id].position = sPlayer.position;
+            }
         }
+    });
+
+    // 방에서 나간 유저 제거
+    Object.keys(state.players).forEach(id => {
+        if (!serverPlayers[id]) delete state.players[id];
     });
 
     Renderer.renderAll(state);
