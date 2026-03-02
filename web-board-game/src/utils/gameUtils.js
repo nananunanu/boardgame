@@ -33,8 +33,10 @@ function resetGame(room) {
 
     console.log("🔄 게임이 초기화되었습니다.");
 }
-function getPublicRooms() {
+function getPublicRooms(rooms) {
     const list = [];
+    if (!rooms) return list; // 방어 코드 추가
+    
     for (const id in rooms) {
         list.push({
             roomId: id,

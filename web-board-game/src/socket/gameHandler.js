@@ -1,4 +1,4 @@
-const { resetGame } = require('../utils/gameUtils');
+const { resetGame, getPublicRooms } = require('../utils/gameUtils');
 const { ChanceCards } = require('../utils/chanceCards');
 // const Engine = require('../logic/gameEngine');
 
@@ -147,6 +147,12 @@ module.exports = (io, socket, rooms) => {
                 }
             }
         }
+    });
+
+    socket.on('request-room-list', () => {
+        // 현재 서버에 있는 rooms 정보를 읽어 목록 전송
+        socket.emit('room-list', getPublicRooms(rooms));
+        console.log(`[Lobby] ${socket.id}님이 방 목록을 새로고침했습니다.`);
     });
 }
 
