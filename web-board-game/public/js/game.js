@@ -11,6 +11,19 @@ import { Renderer } from './renderer.js';
 // import { Animator } from './animator.js';
 // import { UIManager } from './uiManager.js';
 
+// 1. 인원수 선택 로직 (시각적 피드백)
+const countButtons = document.querySelectorAll('.room-create-player-count');
+let selectedMaxPlayers = 4; // 기본값
+
+countButtons.forEach(btn => {
+    btn.onclick = () => {
+        // 모든 버튼 비활성화 스타일 제거 (기존에 선택된 버튼 초기화)
+        countButtons.forEach(b => b.style.backgroundColor = '#ecf0f1'); 
+            // 선택된 버튼 스타일 적용
+            btn.style.backgroundColor = '#2ecc71'; 
+            selectedMaxPlayers = parseInt(btn.getAttribute('data-value'));
+        };
+});
 //PWA를 위한 코드
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')

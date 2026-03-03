@@ -33,7 +33,7 @@ html {
             overflow: hidden;
             font-family: 'Pretendard', sans-serif;
 
-            background-image: url('../img/background-img.png');
+            /* background-image: url('../img/background-img.png'); */
             background-position: center;
             background-repeat: no-repeat;
             
@@ -48,20 +48,8 @@ html {
         #game-container { position: relative; display: flex; align-items: center; justify-content: center; }
 
         canvas { 
-            /* background: var(--board-bg);  */
-            /* border: 3px solid #34495e;  */
+            background: var(--board-bg); 
             border-radius: 0px;
-            /* box-shadow: 0 10px 30px rgba(0,0,0,0.5); */
-
-            
-            /* background-image: url('img/background-img.png');
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed; */
-            
-            
-            /* background-size: cover; */
-
         }
 
 
@@ -121,17 +109,6 @@ html {
             color: #fff; padding: 5px 10px; border-radius: 5px;
             font-weight: bold; font-size: 1.5vw;
         }
-
-        /* 플로팅 주사위 버튼 */
-        /* #roll-btn {
-            position: absolute; bottom: 25%; right: 15%;
-            width: 100px; height: 100px; border-radius: 50%;
-            font-size: 24px; background: var(--accent-color); border: 3px solid #fff;
-            color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 100;
-        }
-        #roll-btn:disabled { background: #7f8c8d; opacity: 0.7; } */
 
         /* 모바일 가로모드 최적화: 주사위 버튼 위치 조정 */
         @media (max-height: 500px) {
@@ -269,14 +246,6 @@ html {
     opacity: 0.5;
 }
 
-
-
-
-
-
-
-
-
 /* =============================================================================== - 모달창*/
 
 .modal-overlay {
@@ -285,7 +254,6 @@ html {
     display: flex; justify-content: center; align-items: center;
     z-index: 1000;
 }
-
 .modal-content {
     background: #FBFFF4; padding: 25px; 
     text-align: center; min-width: 300px;
@@ -316,21 +284,17 @@ html {
 #modal-message {
     font-size: 0.9em; margin-bottom: 20px; color: #34495e;
 }
-
 .modal-buttons { margin-top: 20px; display: flex; gap: 10px; justify-content: center; }
-
 button {
-    padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
+    padding: 0;
+    cursor: pointer;
+    font-weight: bold;
 }
-
 #modal-confirm-btn { background: #c7728b; color: white; }
 #modal-cancel-btn { background: #d6b9c2; color: white; }
 
 
-
 /* =============================================================================== - 찬스카드 디자인*/
-
-
 .chance-card-wrapper {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.7);
@@ -346,28 +310,19 @@ button {
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     border: 5px solid #fff;
 }
-
 .chance-icon {
     font-size: 2rem;
     margin-bottom: 10px;
 }
-
 .chance-title {
     font-size: 1.5rem;
     margin: 0;
 }
-
-
-
-
-
-
-
 /* =============================================================================== - 찬스카드 디자인*/
-
 
 /* 로비 오버레이: 화면 전체를 덮고 중앙 정렬 */
 #lobby-overlay {
+    font-family: "Do Hyeon", sans-serif;
     position: fixed;
     top: 0;
     left: 0;
@@ -388,38 +343,75 @@ button {
 }
 .room-list-top-bunch {
     display: flex;
+    justify-content: space-between; /* 양 끝으로 밀어내기 */
+    margin-top: 1vh;
+    font-size: 1.7vw;
+    color: #e0e4e9;    
 }
+.room-list-top-button {
+    background-color: #8b6673;
+    width: 14vw;
+    height: 7vh;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+    display: flex;
+    justify-content: center; /* 가로 방향 중앙 정렬 */
+    align-items: center;     /* 세로 방향 중앙 정렬 */
+}
+        .room-list-top-button:active {
+            background-color: #c28ea0; /* 누를 때 변할 배경색 */
+            transform: scale(0.95);    /* 살짝 눌리는 듯한 효과 (강추!) */
+            transition: all 0.1s;      /* 변화를 부드럽게 */
+        }
 /* 방 목록 컨테이너 (여백 조정) */
 .room-list-top {
     align-self: flex-start;
-    margin-top: 7vh;
     background-color: #bbaaaf;
     width: 14vw;
     height: 7vh;
     border-radius: 14px 14px 0 0;
     border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+    display: flex;
+    justify-content: center; /* 가로 방향 중앙 정렬 */
+    align-items: center;     /* 세로 방향 중앙 정렬 */
 }
 .room-list-top2 {
     align-self: flex-start;
-    margin-top: 7vh;
     background-color: #9e8990;
     width: 14vw;
     height: 7vh;
     border-radius: 14px 14px 0 0;
     border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+    display: flex;
+    justify-content: center; /* 가로 방향 중앙 정렬 */
+    align-items: center;     /* 세로 방향 중앙 정렬 */
 }
 .room-list-top3 {
     align-self: flex-start;
-    margin-top: 7vh;
     background-color: #7c666e;
     width: 14vw;
     height: 7vh;
     border-radius: 14px 14px 0 0;
     border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+    display: flex;
+    justify-content: center; /* 가로 방향 중앙 정렬 */
+    align-items: center;     /* 세로 방향 중앙 정렬 */
 }
-.room-list-top:hover {
-    background-color: #cfbcc2;
-}
+        .room-list-top:active {
+            background-color: #d1b3bc; /* 누를 때 변할 배경색 */
+            transform: scale(0.95);    /* 살짝 눌리는 듯한 효과 (강추!) */
+            transition: all 0.1s;      /* 변화를 부드럽게 */
+        }
+        .room-list-top2:active {
+            background-color: #b4919d; /* 누를 때 변할 배경색 */
+            transform: scale(0.95);    /* 살짝 눌리는 듯한 효과 (강추!) */
+            transition: all 0.1s;      /* 변화를 부드럽게 */
+        }
+        .room-list-top3:active {
+            background-color: #977682; /* 누를 때 변할 배경색 */
+            transform: scale(0.95);    /* 살짝 눌리는 듯한 효과 (강추!) */
+            transition: all 0.1s;      /* 변화를 부드럽게 */
+        }
 .room-list-background {
     background-color: #bbaaaf;
     border-radius: 0 0 14px 14px;
@@ -435,7 +427,7 @@ button {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 15px; /* 카드 사이의 간격 */
+    gap: 5px; /* 카드 사이의 간격 */
 }
 
 /* 네이버 스타일 카드 아이템 */
@@ -443,7 +435,7 @@ button {
     background: #ffffff;
     border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
     border-radius: 12px;      /* 둥근 모서리 */
-    padding: 20px;
+    padding: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -458,43 +450,64 @@ button {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-
-/* 텍스트 영역 */
-.room-info-wrapper {
+.room-info-join-button {
+    background: #DAC6CC;
+    width: 13vw;
+    height: 9vh;
+    border: 1px solid #e0e4e9;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.room-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-.room-date {
-    font-size: 0.85rem;
-    color: #95a5a6; /* 이미지 속 날짜처럼 연한 회색 */
-}
-
-/* 태그 및 인원수 스타일 */
-.room-meta {
-    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 10px;
+    border-radius: 12px;
 }
 
-.room-tag {
-    color: #3498db; /* [일반] 혹은 [업데이트] 느낌의 파란색 */
-    font-weight: bold;
-    font-size: 0.9rem;
-}
+#room-create-container {
+    background-color: #bbaaaf;
+    border-radius: 14px;
+    border: 1px solid #e0e4e9;
+    width: 90vw;
+    height: 80vh;
+    overflow-y: auto;
 
-.status-tag {
-    background: #f1f3f5;
-    color: #495057;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    border: 1px solid #dee2e6;
+    font-size: 15px;
+    color: #e0e4e9;    
+
+    padding: 0 20px;     /* 좌우에 20px씩 간격을 줌 */
+    box-sizing: border-box; /* 패딩이 너비에 영향을 주지 않도록 설정 */
+    outline: none;
+}   #room-create-title::placeholder {
+    color: rgba(255, 255, 255, 0.7); 
+    }
+#room-create-title {
+    margin: auto;
+    background-color: #8b6673;
+    border-radius: 14px;
+    border: 1px solid #e0e4e9;
+
+
+    width: 50%;
+    height: 10vh;
+    overflow-y: auto;
+}
+.room-create-player-count {
+    background-color: #8b6673;
+    border-radius: 14px;
+    border: 1px solid #e0e4e9;
+    width: 12%;
+    height: 10vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.room-create-public-private {
+    background-color: #8b6673;
+    border-radius: 14px;
+    border: 1px solid #e0e4e9;
+    width: 50%;
+    height: 10vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
