@@ -3,6 +3,7 @@ const statusText = document.getElementById('status');
 const turnText = document.getElementById('your-turn');
 const rollBtn = document.getElementById('roll-btn');
 const resultText = document.getElementById('result-textText');
+const refreshBtn = document.getElementById('refresh-btn')
 
 const canvas = document.getElementById('gameCanvas');
 
@@ -17,14 +18,34 @@ if ('serviceWorker' in navigator) {
 }
 //시작버튼 클릭시
 document.getElementById('start-btn').onclick = function() {
-    // 접속 시 이름 입력받기
-    // const roomId = prompt("입장할 방 번호를 입력하세요 (예: 1234)", "1234");
-    // if (!roomId) return; // 취소 누르면 중단
-
-    // const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    // socket.emit('join-game', roomId, myName);
     document.getElementById('start-overlay').style.display = 'none';
     document.getElementById('lobby-overlay').style.display = 'flex';
+};
+// 방 생성 버튼
+document.getElementById('create-room-btn').onclick = () => {
+    const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
+    if (roomId) joinRoom(roomId);
+};
+// 새로고침 버튼
+refreshBtn.onclick = () => {
+    // 1. 버튼을 잠시 비활성화 (연타 방지)
+    refreshBtn.disabled = true;
+    refreshBtn.innerText = "🔄 갱신 중...";
+
+    // 2. 서버에 목록 요청
+    socket.emit('request-room-list');
+
+    // 3. 1초 뒤에 버튼 다시 활성화 (또는 서버 응답 시 활성화)
+    setTimeout(() => {
+        refreshBtn.disabled = false;
+        refreshBtn.innerText = "🔄 새로고침";
+    }, 500);
+};
+window.joinRoom = function(roomId) {
+    const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
+    socket.emit('join-game', roomId, myName);
+    document.getElementById('lobby-overlay').style.display = 'none';
+    document.getElementById('start-overlay').style.display = 'none';
 };
 // 주사위 버튼 이벤트
 rollBtn.onclick = () => {
@@ -284,31 +305,7 @@ function showCustomModalChanceCard(title, message) {
     });
 }
 //========================================================================================socket========================================================================================
-document.getElementById('create-room-btn').onclick = () => {
-    const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
-    if (roomId) joinRoom(roomId);
-};
-const refreshBtn = document.getElementById('refresh-btn')
-refreshBtn.onclick = () => {
-    // 1. 버튼을 잠시 비활성화 (연타 방지)
-    refreshBtn.disabled = true;
-    refreshBtn.innerText = "🔄 갱신 중...";
 
-    // 2. 서버에 목록 요청
-    socket.emit('request-room-list');
-
-    // 3. 1초 뒤에 버튼 다시 활성화 (또는 서버 응답 시 활성화)
-    setTimeout(() => {
-        refreshBtn.disabled = false;
-        refreshBtn.innerText = "🔄 새로고침";
-    }, 500);
-};
-window.joinRoom = function(roomId) {
-    const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', roomId, myName);
-    document.getElementById('lobby-overlay').style.display = 'none';
-    document.getElementById('start-overlay').style.display = 'none';
-};
 socket.on('room-list', (roomList) => {
     const roomUl = document.getElementById('room-ul');
     roomUl.innerHTML = ""; // 기존 목록 초기화

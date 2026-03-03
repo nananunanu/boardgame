@@ -363,9 +363,9 @@ button {
 
 
 
+/* =============================================================================== - 찬스카드 디자인*/
 
 
-/* 전체 파일철 컨테이너 */
 /* 로비 오버레이: 화면 전체를 덮고 중앙 정렬 */
 #lobby-overlay {
     position: fixed;
@@ -375,6 +375,7 @@ button {
     height: 100vh;
     background: var(--board-bg); 
     display: flex; /* 내부 folder를 중앙에 배치 */
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 500; /* start-overlay(1000)보다는 낮고, 게임판보다는 높게 */
@@ -385,8 +386,49 @@ button {
     top: 5%;
     right: 5%;
 }
-
+.room-list-top-bunch {
+    display: flex;
+}
 /* 방 목록 컨테이너 (여백 조정) */
+.room-list-top {
+    align-self: flex-start;
+    margin-top: 7vh;
+    background-color: #bbaaaf;
+    width: 14vw;
+    height: 7vh;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+}
+.room-list-top2 {
+    align-self: flex-start;
+    margin-top: 7vh;
+    background-color: #9e8990;
+    width: 14vw;
+    height: 7vh;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+}
+.room-list-top3 {
+    align-self: flex-start;
+    margin-top: 7vh;
+    background-color: #7c666e;
+    width: 14vw;
+    height: 7vh;
+    border-radius: 14px 14px 0 0;
+    border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+}
+.room-list-top:hover {
+    background-color: #cfbcc2;
+}
+.room-list-background {
+    background-color: #bbaaaf;
+    border-radius: 0 0 14px 14px;
+    border: 1px solid #e0e4e9; /* 부드러운 외곽선 */
+    width: 90vw;
+    height: 80vh;
+    overflow-y: auto;
+}
+
 .room-list {
     list-style: none;
     padding: 10px;
