@@ -11,25 +11,20 @@ import { Renderer } from './renderer.js';
 // import { Animator } from './animator.js';
 // import { UIManager } from './uiManager.js';
 
-// 1. 인원수 선택 로직 (시각적 피드백)
 const countButtons = document.querySelectorAll('.room-create-player-count');
-let selectedMaxPlayers = 4; // 기본값
+let selectedMaxPlayers = 4;
 countButtons.forEach(btn => {
     btn.onclick = () => {
-        // 모든 버튼 비활성화 스타일 제거 (기존에 선택된 버튼 초기화)
         countButtons.forEach(b => b.style.backgroundColor = '#8b6673'); 
-            // 선택된 버튼 스타일 적용
             btn.style.backgroundColor = '#c07891'; 
             selectedMaxPlayers = parseInt(btn.getAttribute('data-value'));
         };
 });
 const isPublicBtn = document.querySelectorAll('.room-create-public-private');
-let isPublic = false; // 기본값
+let isPublic = false;
 isPublicBtn.forEach(btn => {
     btn.onclick = () => {
-        // 모든 버튼 비활성화 스타일 제거 (기존에 선택된 버튼 초기화)
         isPublicBtn.forEach(b => b.style.backgroundColor = '#8b6673'); 
-            // 선택된 버튼 스타일 적용
             btn.style.backgroundColor = '#c07891'; 
             isPublic = parseInt(btn.getAttribute('data-value'));
         };
@@ -46,8 +41,6 @@ document.getElementById('start-btn').onclick = function() {
 };
 // 방 생성 버튼
 document.getElementById('create-room-btn').onclick = () => {
-    // const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
-    // if (roomId) joinRoom(roomId);
     document.getElementById('room-list-container').style.display = 'none';
     document.getElementById('room-create-container').style.display = 'flex';
 };
@@ -63,9 +56,10 @@ document.getElementById('confirm-create-btn').addEventListener('click', () => {
         alert("방 제목을 입력해주세요!");
         return;
     }
-    const roomId = Math.floor(Math.random() * 9000 + 1000);
-    
-    if (roomId) joinRoom(roomId, roomTitle, selectedMaxPlayers, isPublic);
+    const roomId = Number(Math.floor(Math.random() * 9000 + 1000));
+    // const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
+    if (!roomId) return; // 취소 누르면 중단
+    if (roomId) joinRoom(roomId, roomTitle);
 
     alert(`${roomTitle} 방이 생성되었습니다!`);
    
@@ -85,9 +79,10 @@ refreshBtn.onclick = () => {
         refreshBtn.innerText = "🔄 새로고침";
     }, 500);
 };
-window.joinRoom = function(roomId, roomTitle, selectedMaxPlayers, isPublic) {
+window.joinRoom = function(roomId, roomTitle) {
+    console.log(`${roomId}에 입장했습니다!`);
     const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, isPublic, myName);
+    socket.emit('join-game', roomId, roomTitle, myName);
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
@@ -361,10 +356,11 @@ socket.on('room-list', (roomList) => {
 
     roomList.forEach(room => {
         const li = document.createElement('li');
+        const roomId = Number(room.roomId);
         li.className = "room-item";
         li.innerHTML = `
             <span class="room-info">🏠 방 번호: ${room.roomId} 방 제목: ${room.title} (${room.playerCount}명 접속 중)</span>
-            <button onclick="joinRoom('${room.roomId}')">입장하기</button>
+            <button onclick="joinRoom(${roomId})">입장하기</button>
         `;
         roomUl.appendChild(li);
     });
@@ -380,6 +376,7 @@ socket.on('update-taxpool', (pool) => {
 
 // 서버로부터 플레이어 전체 정보를 동기화 (기존 코드 보완)
 socket.on('update-players', (serverPlayers) => {
+    console.log(`맵 동기화함!`)
     // 1. 리셋 처리
     if (!serverPlayers || Object.keys(serverPlayers).length === 0) {
         state.players = {};

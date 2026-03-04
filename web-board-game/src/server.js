@@ -6,7 +6,6 @@ const { Server } = require('socket.io');
 const registerHandler = require(`./socket/gameHandler`); // 게임 관련 소켓 핸들러
 const { INITIAL_MAP } = require(`./constants/mapData`);
 const { resetGame, getPublicRooms } = require('./utils/gameUtils');
-const { title } = require('process');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,20 +16,19 @@ const rooms = {}; // {"방번호": {players, mapInfo, taxPool ...}}
 
 io.on('connection', (socket) => {
     console.log(`New client connected: ${socket.id}`);
+    socket.emit('room-list', getPublicRooms(rooms));
 
-    socket.on('join-game', (roomId, roomTitle, maxPlayers, isPublic, username) => {
+    socket.on('join-game', (roomId, roomTitle, username) => {
         if (!roomId || !username) return;
 
         socket.join(roomId);
         socket.roomId = roomId;
         socket.playerName = username;
-
-        console.log(`${roomTitle}`);
+        console.log(`${roomId}에 입장했습니다!(server)`);
 
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 title: roomTitle,
-                maxPlayers: maxPlayers,
                 players: {},
                 playerOrder: [],
                 currentTurnIndex: 0,
@@ -58,7 +56,6 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('update-map', currentRoom.mapInfo);
         io.to(roomId).emit('game-log', `📢 ${username}님이 입장하셨습니다.`);
     });
-    socket.emit('room-list', getPublicRooms(rooms));
     registerHandler(io, socket, rooms);
 });
 // const PORT = 8080;
