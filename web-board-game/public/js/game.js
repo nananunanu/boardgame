@@ -36,9 +36,26 @@ document.getElementById('start-btn').onclick = function() {
 };
 // 방 생성 버튼
 document.getElementById('create-room-btn').onclick = () => {
-    const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
-    if (roomId) joinRoom(roomId);
+    // const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
+    // if (roomId) joinRoom(roomId);
+    document.getElementById('room-list-container').style.display = 'none';
+    document.getElementById('room-create-container').style.display = 'flex';
 };
+document.getElementById('cancel-create-btn').onclick = function() {
+    document.getElementById('room-list-container').style.display = 'flex';
+    document.getElementById('room-list-container').style.flexDirection = 'column';
+    document.getElementById('room-create-container').style.display = 'none';
+};
+document.getElementById('confirm-create-btn').addEventListener('click', () => {
+    const title = document.getElementById('room-create-title').value;
+
+    if (!title.trim()) {
+        alert("방 제목을 입력해주세요!");
+        return;
+    }
+    alert(`${title} 방이 생성되었습니다!`);
+   
+});
 // 새로고침 버튼
 refreshBtn.onclick = () => {
     // 1. 버튼을 잠시 비활성화 (연타 방지)

@@ -329,8 +329,6 @@ button {
     width: 100vw;
     height: 100vh;
     background: var(--board-bg); 
-    display: flex; /* 내부 folder를 중앙에 배치 */
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 500; /* start-overlay(1000)보다는 낮고, 게임판보다는 높게 */
