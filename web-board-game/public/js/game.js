@@ -47,13 +47,17 @@ document.getElementById('cancel-create-btn').onclick = function() {
     document.getElementById('room-create-container').style.display = 'none';
 };
 document.getElementById('confirm-create-btn').addEventListener('click', () => {
-    const title = document.getElementById('room-create-title').value;
+    const roomTitle = document.getElementById('room-create-title').value;
 
-    if (!title.trim()) {
+    if (!roomTitle.trim()) {
         alert("방 제목을 입력해주세요!");
         return;
     }
-    alert(`${title} 방이 생성되었습니다!`);
+    const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
+    
+    if (roomId) joinRoom(roomTitle, roomId);
+
+    alert(`${roomTitle} 방이 생성되었습니다!`);
    
 });
 // 새로고침 버튼
@@ -71,9 +75,9 @@ refreshBtn.onclick = () => {
         refreshBtn.innerText = "🔄 새로고침";
     }, 500);
 };
-window.joinRoom = function(roomId) {
+window.joinRoom = function(roomTitle, roomId) {
     const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', roomId, myName);
+    socket.emit('join-game', roomTitle, roomId, myName);
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
@@ -349,7 +353,7 @@ socket.on('room-list', (roomList) => {
         const li = document.createElement('li');
         li.className = "room-item";
         li.innerHTML = `
-            <span class="room-info">🏠 방 번호: ${room.roomId} (${room.playerCount}명 접속 중)</span>
+            <span class="room-info">🏠 방 번호: ${room.roomId} 방 제목: ${room.title} (${room.playerCount}명 접속 중)</span>
             <button onclick="joinRoom('${room.roomId}')">입장하기</button>
         `;
         roomUl.appendChild(li);
