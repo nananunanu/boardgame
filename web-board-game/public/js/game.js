@@ -14,7 +14,6 @@ import { Renderer } from './renderer.js';
 // 1. 인원수 선택 로직 (시각적 피드백)
 const countButtons = document.querySelectorAll('.room-create-player-count');
 let selectedMaxPlayers = 4; // 기본값
-
 countButtons.forEach(btn => {
     btn.onclick = () => {
         // 모든 버튼 비활성화 스타일 제거 (기존에 선택된 버튼 초기화)
@@ -22,6 +21,17 @@ countButtons.forEach(btn => {
             // 선택된 버튼 스타일 적용
             btn.style.backgroundColor = '#c07891'; 
             selectedMaxPlayers = parseInt(btn.getAttribute('data-value'));
+        };
+});
+const isPublicBtn = document.querySelectorAll('.room-create-public-private');
+let isPublic = false; // 기본값
+isPublicBtn.forEach(btn => {
+    btn.onclick = () => {
+        // 모든 버튼 비활성화 스타일 제거 (기존에 선택된 버튼 초기화)
+        isPublicBtn.forEach(b => b.style.backgroundColor = '#8b6673'); 
+            // 선택된 버튼 스타일 적용
+            btn.style.backgroundColor = '#c07891'; 
+            isPublic = parseInt(btn.getAttribute('data-value'));
         };
 });
 //PWA를 위한 코드
@@ -41,7 +51,7 @@ document.getElementById('create-room-btn').onclick = () => {
     document.getElementById('room-list-container').style.display = 'none';
     document.getElementById('room-create-container').style.display = 'flex';
 };
-document.getElementById('cancel-create-btn').onclick = function() {
+document.getElementById('room-list-top-btn1').onclick = function() {
     document.getElementById('room-list-container').style.display = 'flex';
     document.getElementById('room-list-container').style.flexDirection = 'column';
     document.getElementById('room-create-container').style.display = 'none';
@@ -53,9 +63,9 @@ document.getElementById('confirm-create-btn').addEventListener('click', () => {
         alert("방 제목을 입력해주세요!");
         return;
     }
-    const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
+    const roomId = Math.floor(Math.random() * 9000 + 1000);
     
-    if (roomId) joinRoom(roomTitle, roomId);
+    if (roomId) joinRoom(roomId, roomTitle, selectedMaxPlayers, isPublic);
 
     alert(`${roomTitle} 방이 생성되었습니다!`);
    
@@ -75,9 +85,9 @@ refreshBtn.onclick = () => {
         refreshBtn.innerText = "🔄 새로고침";
     }, 500);
 };
-window.joinRoom = function(roomTitle, roomId) {
+window.joinRoom = function(roomId, roomTitle, selectedMaxPlayers, isPublic) {
     const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', roomTitle, roomId, myName);
+    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, isPublic, myName);
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };

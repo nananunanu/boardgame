@@ -18,7 +18,7 @@ const rooms = {}; // {"방번호": {players, mapInfo, taxPool ...}}
 io.on('connection', (socket) => {
     console.log(`New client connected: ${socket.id}`);
 
-    socket.on('join-game', (roomTitle, roomId, username) => {
+    socket.on('join-game', (roomId, roomTitle, maxPlayers, isPublic, username) => {
         if (!roomId || !username) return;
 
         socket.join(roomId);
@@ -30,6 +30,7 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 title: roomTitle,
+                maxPlayers: maxPlayers,
                 players: {},
                 playerOrder: [],
                 currentTurnIndex: 0,
