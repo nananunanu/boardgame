@@ -18,9 +18,9 @@ let selectedMaxPlayers = 4; // 기본값
 countButtons.forEach(btn => {
     btn.onclick = () => {
         // 모든 버튼 비활성화 스타일 제거 (기존에 선택된 버튼 초기화)
-        countButtons.forEach(b => b.style.backgroundColor = '#ecf0f1'); 
+        countButtons.forEach(b => b.style.backgroundColor = '#8b6673'); 
             // 선택된 버튼 스타일 적용
-            btn.style.backgroundColor = '#2ecc71'; 
+            btn.style.backgroundColor = '#c07891'; 
             selectedMaxPlayers = parseInt(btn.getAttribute('data-value'));
         };
 });
