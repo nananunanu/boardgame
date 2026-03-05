@@ -371,6 +371,13 @@ socket.on('room-list', (roomList) => {
         }
     });
 });
+socket.on('join-error', (msg) => {
+    document.getElementById('lobby-overlay').style.display = 'flex';
+    document.getElementById('room-list-container').style.display = 'flex';
+    document.getElementById('room-list-container').style.flexDirection = 'column';
+    document.getElementById('room-create-container').style.display = 'none';
+    alert(msg);
+});
 socket.on('update-map', (serverMap) => {
     state.currentMap = serverMap;
     Renderer.renderAll(state); 

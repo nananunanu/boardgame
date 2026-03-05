@@ -20,11 +20,16 @@ io.on('connection', (socket) => {
 
     socket.on('join-game', (roomId, roomTitle, selectedMaxPlayers,username) => {
         if (!roomId || !username) return;
-
+        if (rooms[roomId] && Object.keys(rooms[roomId].players).length >= rooms[roomId].maxPlayers) {
+            socket.emit('room-list', getPublicRooms(rooms));
+            socket.emit('join-error', '이미 방이 가득 찼습니다.');
+            return;
+        }
         socket.join(roomId);
         socket.roomId = roomId;
         socket.playerName = username;
         console.log(`${roomId}에 입장했습니다!(server)`);
+
 
         if (!rooms[roomId]) {
             rooms[roomId] = {
