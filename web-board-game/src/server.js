@@ -9,6 +9,8 @@ const registerHandler = require(`./socket/gameHandler`); // 게임 관련 소켓
 const { INITIAL_MAP } = require(`./constants/mapData`);
 const { resetGame, getPublicRooms } = require('./utils/gameUtils');
 
+const activeUsers = {};
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -22,9 +24,19 @@ const rooms = {}; // {"방번호": {players, mapInfo, taxPool ...}}
 
 io.on('connection', (socket) => {
     console.log(`New client connected: ${socket.id}`);
-    socket.emit('room-list', getPublicRooms(rooms));
-
-    socket.on('join-game', (roomId, roomTitle, selectedMaxPlayers,username) => {
+    
+    socket.on('join-lobby', async (username) => {
+        if (activeUsers[username] && activeUsers[username] !== socket.id) {
+            const oldSocket = io.sockets.sockets.get(activeUsers[username]);
+            // 기존 소켓에 알림을 보내고 연결 종료
+            oldSocket.emit('server-alert', "📢 다른 곳에서 로그인하여 접속이 종료됩니다.");
+            await new Promise(r => setTimeout(r, 1000));
+            if (oldSocket) oldSocket.disconnect(true); // 접속 끊기
+        }
+        activeUsers[username] = socket.id;
+        socket.username = username;
+    });
+    socket.on('join-game', (roomId, roomTitle, selectedMaxPlayers, username) => {
         if (!roomId || !username) return;
         if (rooms[roomId] && Object.keys(rooms[roomId].players).length >= rooms[roomId].maxPlayers) {
             socket.emit('room-list', getPublicRooms(rooms));
@@ -70,7 +82,8 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('game-log', `📢 ${username}님이 입장하셨습니다.`);
         
     });
-    registerHandler(io, socket, rooms);
+    socket.emit('room-list', getPublicRooms(rooms));
+    registerHandler(io, socket, rooms, activeUsers);
 });
 // const PORT = 8080;
 

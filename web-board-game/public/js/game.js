@@ -364,8 +364,18 @@ function showCustomModalChanceCard(title, message) {
     });
 }
 //========================================================================================socket========================================================================================
+socket.on('connect', () => {
+    // statusText.innerText = `내 ID: ${socket.id} (접속됨)`;
+});
 socket.io.on("reconnect", () => {
   window.location.reload(); // 서버 재시작 시 클라이언트도 새로고침해서 상태 동기화
+});
+socket.on('disconnect', (reason) => {
+    if (reason === "io server disconnect") {
+        // 서버에 의해 강제로 끊긴 경우
+        alert("다른 곳에서 로그인되어 접속이 종료되었습니다.");
+        location.reload(); // 페이지 새로고침하여 로그인 화면으로 이동
+    }
 });
 socket.on('room-list', (roomList) => {
     const roomUl = document.getElementById('room-ul');
@@ -441,10 +451,6 @@ socket.on('update-players', (serverPlayers) => {
 
     Renderer.renderAll(state);
     updatePersonalUI();
-});
-
-socket.on('connect', () => {
-    // statusText.innerText = `내 ID: ${socket.id} (접속됨)`;
 });
 
 // game.js 에 로그 수신 이벤트 추가
@@ -625,6 +631,9 @@ socket.on('player-winner', (targetId) => { //파산 로직
         rollBtn.disabled = DISABLE;
     }
 });
+socket.on('server-alert', (message) => {
+    alert(message);
+});
 
 
 
@@ -708,6 +717,7 @@ loginBtn.onclick = async () => {
         
         document.getElementById('start-overlay').style.display = 'none';
         document.getElementById('lobby-overlay').style.display = 'flex';
+        socket.emit('join-lobby', currentUser.username);
     } else {
         const errorMsg = await response.text();
         alert(errorMsg);

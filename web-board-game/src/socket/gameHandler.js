@@ -2,7 +2,7 @@ const { resetGame, getPublicRooms } = require('../utils/gameUtils');
 const { ChanceCards } = require('../utils/chanceCards');
 // const Engine = require('../logic/gameEngine');
 
-module.exports = (io, socket, rooms) => {
+module.exports = (io, socket, rooms, activeUsers) => {
     // const { players, mapInfo } = gameState;
     socket.on('move-complete', (finalPos) => {
         handleMoveComplete(io, socket, finalPos, rooms[socket.roomId], socket.roomId);
@@ -109,7 +109,7 @@ module.exports = (io, socket, rooms) => {
 
     socket.on('disconnect', () => {
         const roomId = socket.roomId;
-        
+
         // 방이 존재하는지 먼저 확인
         if (roomId && rooms[roomId]) {
             const room = rooms[roomId];
@@ -152,6 +152,9 @@ module.exports = (io, socket, rooms) => {
                     console.log(`[${roomId}] ${name} 퇴장 처리 완료`);
                 }
             }
+        }
+        if (socket.username) {
+            delete activeUsers[socket.username];
         }
     });
 
