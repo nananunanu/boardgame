@@ -18,7 +18,7 @@ io.on('connection', (socket) => {
     console.log(`New client connected: ${socket.id}`);
     socket.emit('room-list', getPublicRooms(rooms));
 
-    socket.on('join-game', (roomId, roomTitle, username) => {
+    socket.on('join-game', (roomId, roomTitle, selectedMaxPlayers,username) => {
         if (!roomId || !username) return;
 
         socket.join(roomId);
@@ -29,6 +29,7 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 title: roomTitle,
+                maxPlayers: selectedMaxPlayers,
                 players: {},
                 playerOrder: [],
                 currentTurnIndex: 0,

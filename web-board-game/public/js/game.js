@@ -12,7 +12,7 @@ import { Renderer } from './renderer.js';
 // import { UIManager } from './uiManager.js';
 
 const countButtons = document.querySelectorAll('.room-create-player-count');
-let selectedMaxPlayers = 4;
+let selectedMaxPlayers = 0;
 countButtons.forEach(btn => {
     btn.onclick = () => {
         countButtons.forEach(b => b.style.backgroundColor = '#8b6673'); 
@@ -56,6 +56,10 @@ document.getElementById('confirm-create-btn').addEventListener('click', () => {
         alert("방 제목을 입력해주세요!");
         return;
     }
+    if (selectedMaxPlayers === 0) {
+        alert("최대 인원 수를 선택해주세요!");
+        return;
+    }
     const roomId = Number(Math.floor(Math.random() * 9000 + 1000));
     // const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
     if (!roomId) return; // 취소 누르면 중단
@@ -82,7 +86,7 @@ refreshBtn.onclick = () => {
 window.joinRoom = function(roomId, roomTitle) {
     console.log(`${roomId}에 입장했습니다!`);
     const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', roomId, roomTitle, myName);
+    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, myName);
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
@@ -357,12 +361,14 @@ socket.on('room-list', (roomList) => {
     roomList.forEach(room => {
         const li = document.createElement('li');
         const roomId = Number(room.roomId);
-        li.className = "room-item";
-        li.innerHTML = `
-            <span class="room-info">🏠 방 번호: ${room.roomId} 방 제목: ${room.title} (${room.playerCount}명 접속 중)</span>
-            <button onclick="joinRoom(${roomId})">입장하기</button>
-        `;
-        roomUl.appendChild(li);
+        if (room.playerCount < room.maxPlayers) {
+            li.className = "room-item";
+            li.innerHTML = `
+                <span class="room-info">🏠${room.title} (${room.playerCount} / ${room.maxPlayers})</span>
+                <button onclick="joinRoom(${roomId})">입장하기</button>
+            `;
+            roomUl.appendChild(li);
+        }
     });
 });
 socket.on('update-map', (serverMap) => {
