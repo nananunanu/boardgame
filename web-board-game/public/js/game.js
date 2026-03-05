@@ -364,7 +364,7 @@ socket.on('room-list', (roomList) => {
         if (room.playerCount < room.maxPlayers) {
             li.className = "room-item";
             li.innerHTML = `
-                <span class="room-info">🏠${room.title} (${room.playerCount} / ${room.maxPlayers})</span>
+                <span class="room-info">🏠${room.title} (${room.playerCount} / ${room.maxPlayers}) : ${room.ownerName}</span>
                 <button class="room-info-join-button" onclick="joinRoom(${roomId})">입장하기</button>
             `;
             roomUl.appendChild(li);

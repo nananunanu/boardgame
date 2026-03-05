@@ -35,6 +35,7 @@ io.on('connection', (socket) => {
             rooms[roomId] = {
                 title: roomTitle,
                 maxPlayers: selectedMaxPlayers,
+                ownerName: username,
                 players: {},
                 playerOrder: [],
                 currentTurnIndex: 0,

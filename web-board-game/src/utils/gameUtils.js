@@ -41,6 +41,7 @@ function getPublicRooms(rooms) {
         list.push({
             title: rooms[id].title,
             maxPlayers: rooms[id].maxPlayers,
+            ownerName: rooms[id].ownerName,
             roomId: id,
             playerCount: Object.keys(rooms[id].players).length,
             // 방장 이름이나 상태 등을 추가할 수 있습니다.
