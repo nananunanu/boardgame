@@ -34,8 +34,8 @@ module.exports = (io, socket, rooms) => {
 
         // 월급 지급 (한 바퀴 완주)
         if (newPos < oldPos || (oldPos + diceValue >= room.mapInfo.length)) {
-            player.money += 300;
-            io.to(roomId).emit('game-log', `💰 ${player.name}님이 월급 300만원을 받았습니다!`);
+            player.money += 200;
+            io.to(roomId).emit('game-log', `💰 ${player.name}님이 월급 200만원을 받았습니다!`);
         }
     });
     // 땅 구매 요청 처리
@@ -305,11 +305,11 @@ function processSpecialTile(io, player, pos, room, roomId) {
             });
     }
     else if (pos === 23) {
-        const tax = 50;
+        const tax = 100;
         const actualTax = Math.min(player.money, tax);
         player.money -= actualTax;
-        room.taxPool += actualTax;
-        io.to(roomId).emit('game-log', `💸 ${player.name}님 세금 ${actualTax}만원 납부`);
+        room.taxPool += actualTax * 0.7;
+        io.to(roomId).emit('game-log', `💸 ${player.name}님 세금 ${actualTax * 0.7}(기금 70% / 세금 30%)만원 납부`);
     }
 }
 
