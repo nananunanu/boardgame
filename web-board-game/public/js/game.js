@@ -46,6 +46,11 @@ document.getElementById('create-room-btn').onclick = () => {
     document.getElementById('room-list-container').style.display = 'none';
     document.getElementById('room-create-container').style.display = 'flex';
 };
+document.getElementById('spectator-mode-btn').onclick = () => {
+    document.getElementById('bankruptcy-overlay').style.display = 'none';
+    document.getElementById('game-leave-btn').style.display = 'flex';
+};
+
 listTopBtn.onclick = () => {
     appearList();
 };
