@@ -3,9 +3,11 @@ const statusText = document.getElementById('status');
 const turnText = document.getElementById('your-turn');
 const rollBtn = document.getElementById('roll-btn');
 const resultText = document.getElementById('result-textText');
-const refreshBtn = document.getElementById('refresh-btn')
+const refreshBtn = document.getElementById('refresh-btn');
+const listTopBtn = document.getElementById('room-list-top-btn1');
 
 const canvas = document.getElementById('gameCanvas');
+
 
 import { Renderer } from './renderer.js';
 // import { Animator } from './animator.js';
@@ -44,11 +46,15 @@ document.getElementById('create-room-btn').onclick = () => {
     document.getElementById('room-list-container').style.display = 'none';
     document.getElementById('room-create-container').style.display = 'flex';
 };
-document.getElementById('room-list-top-btn1').onclick = function() {
+listTopBtn.onclick = () => {
+    appearList();
+};
+
+function appearList() {
     document.getElementById('room-list-container').style.display = 'flex';
     document.getElementById('room-list-container').style.flexDirection = 'column';
     document.getElementById('room-create-container').style.display = 'none';
-};
+}
 document.getElementById('confirm-create-btn').addEventListener('click', () => {
     const roomTitle = document.getElementById('room-create-title').value;
 
@@ -348,7 +354,9 @@ function showCustomModalChanceCard(title, message) {
     });
 }
 //========================================================================================socket========================================================================================
-
+socket.io.on("reconnect", () => {
+  window.location.reload(); // 서버 재시작 시 클라이언트도 새로고침해서 상태 동기화
+});
 socket.on('room-list', (roomList) => {
     const roomUl = document.getElementById('room-ul');
     roomUl.innerHTML = ""; // 기존 목록 초기화

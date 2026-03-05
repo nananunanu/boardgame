@@ -12,6 +12,12 @@ module.exports = (io, socket, rooms) => {
     socket.on('roll-dice', () => {
         const roomId = socket.roomId;
         const room = rooms[roomId];
+        
+        if (!room || !room.playerOrder) {
+            console.error(`[Error] Room ${roomId} not found.`);
+            return;
+        }
+
         const activeId = room.playerOrder[room.currentTurnIndex];
         const player = room.players[activeId];
 
@@ -25,8 +31,8 @@ module.exports = (io, socket, rooms) => {
             return;
         }
 
-        // const diceValue = 4; // 테스트용 고정값
-        const diceValue = Math.floor(Math.random() * 6) + 1;
+        const diceValue = 1; // 테스트용 고정값
+        // const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % room.mapInfo.length;
 
@@ -154,169 +160,171 @@ module.exports = (io, socket, rooms) => {
         socket.emit('room-list', getPublicRooms(rooms));
         console.log(`[Lobby] ${socket.id}님이 방 목록을 새로고침했습니다.`);
     });
-}
 
 //========================================================================================function========================================================================================
-function nextTurn(io, room, roomId) {
-    room.currentTurnIndex = (room.currentTurnIndex + 1) % room.playerOrder.length;
-    io.to(roomId).emit('turn-change', room.playerOrder[room.currentTurnIndex]);
-    io.to(roomId).emit('update-players', room.players);
-}
 
-function handleMoveComplete(io, socket, finalPos, room, roomId) {
-    const player = room.players[socket.id];
-    const land = room.mapInfo[finalPos];
-    player.position = finalPos;
+    function nextTurn(io, room, roomId) {
+        room.currentTurnIndex = (room.currentTurnIndex + 1) % room.playerOrder.length;
+        io.to(roomId).emit('turn-change', room.playerOrder[room.currentTurnIndex]);
+        io.to(roomId).emit('update-players', room.players);
+    }
 
-    // 1. 통행료 지불
-    if (land.type === 'land' && land.owner && land.owner !== socket.id) {
-        const owner = room.players[land.owner];
-        const baseFee = Math.floor(land.price * 0.4);
-        const fee = baseFee * [1, 2, 4, 6][land.buildingLevel];
+    function handleMoveComplete(io, socket, finalPos, room, roomId) {
+        const player = room.players[socket.id];
+        const land = room.mapInfo[finalPos];
+        player.position = finalPos;
 
-        if (player.money >= fee && player.freePass > 0) {
-            player.freePass -= 1;
-            io.to(roomId).emit('showModalHandler-freePass', {
-                title: "🎫 통행료 면제권 사용",
-                message: `${player.name}님의 통행료 ${fee}만원을 면제합니다!`,
-            });
-        } else if (player.money >= fee) {
-            player.money -= fee;
-            owner.money += fee;
-            socket.emit('showModalHandler-payFee', {
-                title: "🧾 도시 통행료 청구서",
-                isPayfee: true,
-                details: {
-                    owner: owner.name,
-                    city: land.name,
-                    baseFee: baseFee,
-                    building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
-                    multiplier: [1, 2, 4, 6][land.buildingLevel],
-                    total: `${fee}만원`
-                }
-            });
-            socket.to(land.owner).emit('showModalHandler-notify-income', {
-                title: "💰 입금 확인서",
-                isPayfee: true,
-                details: {
-                    owner: owner.name,
-                    baseFee: baseFee,
-                    total: `${fee}만원`,
-                    multiplier: [1, 2, 4, 6][land.buildingLevel],
-                    building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
-                    landName: land.name,
-                    payerName: player.name
-                }
-            });
-            io.to(roomId).emit('game-log', `💸 ${player.name} -> ${owner.name} 통행료 ${fee}만원 지불`);
-        } else {
-            socket.emit('showModalHandler-payFee', {
-                title: "🧾 도시 통행료 청구서",
-                isPayfee: true,
-                details: {
-                    owner: owner.name,
-                    city: land.name,
-                    baseFee: baseFee,
-                    building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
-                    multiplier: [1, 2, 4, 6][land.buildingLevel],
-                    total: `${player.money}만원(파산)`
-                }
-            });
-            socket.to(land.owner).emit('showModalHandler-notify-income', {
-                title: "💰 입금 확인서",
-                isPayfee: true,
-                details: {
-                    owner: owner.name,
-                    baseFee: baseFee,
-                    total: `${player.money}만원(파산)`,
-                    multiplier: [1, 2, 4, 6][land.buildingLevel],
-                    building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
-                    landName: land.name,
-                    payerName: `${player.name}(파산)`
-                }
-            });
-            owner.money += player.money;
-            player.money = 0;
-            handleBankruptcy(io, socket.id, room, roomId);
-            return; // 파산 시 턴 교대 로직은 handleBankruptcy에서 처리
-        }
-    } 
-    // 2. 땅 구매/건축 제안
-    else if (land.type === 'land') {
-        if (!land.owner && player.money >= land.price) {
-            socket.emit('ask-buy-land', { index: finalPos, name: land.name, price: land.price });
-        } else if (land.owner === socket.id) {
-            const standardCost = land.price * 0.3;
-            const costs = [standardCost, land.price + standardCost / 6, standardCost * 2];
-            const names = ["별장", "빌라", "호텔"];
-            if (land.buildingLevel < 3) {
-                socket.emit('ask-build-building', { 
-                    name: land.name, 
-                    buildingName: names[land.buildingLevel], 
-                    cost: Math.floor(costs[land.buildingLevel]), 
-                    index: finalPos 
+        // 1. 통행료 지불
+        if (land.type === 'land' && land.owner && land.owner !== socket.id) {
+            const owner = room.players[land.owner];
+            const baseFee = Math.floor(land.price * 0.4);
+            // const fee = baseFee * [1, 2, 4, 6][land.buildingLevel];
+            const fee = 1000; //테스트용 고정값
+
+            if (player.money >= fee && player.freePass > 0) {
+                player.freePass -= 1;
+                io.to(roomId).emit('showModalHandler-freePass', {
+                    title: "🎫 통행료 면제권 사용",
+                    message: `${player.name}님의 통행료 ${fee}만원을 면제합니다!`,
                 });
+            } else if (player.money >= fee) {
+                player.money -= fee;
+                owner.money += fee;
+                socket.emit('showModalHandler-payFee', {
+                    title: "🧾 도시 통행료 청구서",
+                    isPayfee: true,
+                    details: {
+                        owner: owner.name,
+                        city: land.name,
+                        baseFee: baseFee,
+                        building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
+                        multiplier: [1, 2, 4, 6][land.buildingLevel],
+                        total: `${fee}만원`
+                    }
+                });
+                socket.to(land.owner).emit('showModalHandler-notify-income', {
+                    title: "💰 입금 확인서",
+                    isPayfee: true,
+                    details: {
+                        owner: owner.name,
+                        baseFee: baseFee,
+                        total: `${fee}만원`,
+                        multiplier: [1, 2, 4, 6][land.buildingLevel],
+                        building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
+                        landName: land.name,
+                        payerName: player.name
+                    }
+                });
+                io.to(roomId).emit('game-log', `💸 ${player.name} -> ${owner.name} 통행료 ${fee}만원 지불`);
+            } else {
+                socket.emit('showModalHandler-payFee', {
+                    title: "🧾 도시 통행료 청구서",
+                    isPayfee: true,
+                    details: {
+                        owner: owner.name,
+                        city: land.name,
+                        baseFee: baseFee,
+                        building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
+                        multiplier: [1, 2, 4, 6][land.buildingLevel],
+                        total: `${player.money}만원(파산)`
+                    }
+                });
+                socket.to(land.owner).emit('showModalHandler-notify-income', {
+                    title: "💰 입금 확인서",
+                    isPayfee: true,
+                    details: {
+                        owner: owner.name,
+                        baseFee: baseFee,
+                        total: `${player.money}만원(파산)`,
+                        multiplier: [1, 2, 4, 6][land.buildingLevel],
+                        building: land.buildingLevel === 0 ? "건물 없음" : ["별장", "빌라", "호텔"][land.buildingLevel - 1],
+                        landName: land.name,
+                        payerName: `${player.name}(파산)`
+                    }
+                });
+                owner.money += player.money;
+                player.money = 0;
+                handleBankruptcy(io, socket.id, room, roomId);
+                return; // 파산 시 턴 교대 로직은 handleBankruptcy에서 처리
+            }
+        } 
+        // 2. 땅 구매/건축 제안
+        else if (land.type === 'land') {
+            if (!land.owner && player.money >= land.price) {
+                socket.emit('ask-buy-land', { index: finalPos, name: land.name, price: land.price });
+            } else if (land.owner === socket.id) {
+                const standardCost = land.price * 0.3;
+                const costs = [standardCost, land.price + standardCost / 6, standardCost * 2];
+                const names = ["별장", "빌라", "호텔"];
+                if (land.buildingLevel < 3) {
+                    socket.emit('ask-build-building', { 
+                        name: land.name, 
+                        buildingName: names[land.buildingLevel], 
+                        cost: Math.floor(costs[land.buildingLevel]), 
+                        index: finalPos 
+                    });
+                }
             }
         }
-    }
-    // 3. 특수 칸 처리 (무인도, 사회복지, 국세청 등)
-    else {
-        processSpecialTile(io, player, finalPos, room, roomId);
-    }
-
-    io.to(roomId).emit('update-players', room.players);
-    io.to(roomId).emit('update-taxpool', room.taxPool);
-    nextTurn(io, room, roomId);
-}
-
-function processSpecialTile(io, player, pos, room, roomId) {
-    if (pos === 7) {
-        if (player.lockedTurnsPass > 0) {
-            player.lockedTurnsPass -= 1;
-            io.to(roomId).emit('game-log', `🏝️ ${player.name}님이 무인도 탈출권을 사용하여 탈출했습니다.`);
-            return;
-        }
+        // 3. 특수 칸 처리 (무인도, 사회복지, 국세청 등)
         else {
-            player.lockedTurns = 3;
-            io.to(roomId).emit('game-log', `🚨 ${player.name}님 무인도 도착!`);
+            processSpecialTile(io, player, finalPos, room, roomId);
         }
-    } else if (pos === 14) {
-        player.money += room.taxPool;
-        io.to(roomId).emit('game-log', `🎉 ${player.name}님 기금 ${room.taxPool}만원 수령!`);
-        room.taxPool = 0;
-    }
-    else if (pos === 21) {
-            player.isTeleportPending = true; // 세계일주 대기 상태 설정
-            io.to(roomId).emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
-    }
-    else if (pos === 4 || pos === 18) {
-            const randomIndex = Math.floor(Math.random() * ChanceCards.length);
-            // const randomIndex = 14;
-            const card = ChanceCards[randomIndex];
 
-            card.action(player);
-
-            io.to(roomId).emit('game-log', `${player.name}님이 찬스 칸에 도착했습니다!`);
-
-            io.to(roomId).emit('showModalHandler-chance-card', {
-                title: card.title,
-                description: card.description,
-                name: player.name
-            });
+        io.to(roomId).emit('update-players', room.players);
+        io.to(roomId).emit('update-taxpool', room.taxPool);
+        nextTurn(io, room, roomId);
     }
-    else if (pos === 23) {
-        const tax = 100;
-        const actualTax = Math.min(player.money, tax);
-        player.money -= actualTax;
-        room.taxPool += actualTax * 0.7;
-        io.to(roomId).emit('game-log', `💸 ${player.name}님 세금 ${actualTax * 0.7}(기금 70% / 세금 30%)만원 납부`);
-    }
-}
 
-function handleBankruptcy(io, socketId, room, roomId) {
+    function processSpecialTile(io, player, pos, room, roomId) {
+        if (pos === 7) {
+            if (player.lockedTurnsPass > 0) {
+                player.lockedTurnsPass -= 1;
+                io.to(roomId).emit('game-log', `🏝️ ${player.name}님이 무인도 탈출권을 사용하여 탈출했습니다.`);
+                return;
+            }
+            else {
+                player.lockedTurns = 3;
+                io.to(roomId).emit('game-log', `🚨 ${player.name}님 무인도 도착!`);
+            }
+        } else if (pos === 14) {
+            player.money += room.taxPool;
+            io.to(roomId).emit('game-log', `🎉 ${player.name}님 기금 ${room.taxPool}만원 수령!`);
+            room.taxPool = 0;
+        }
+        else if (pos === 21) {
+                player.isTeleportPending = true; // 세계일주 대기 상태 설정
+                io.to(roomId).emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
+        }
+        else if (pos === 4 || pos === 18) {
+                const randomIndex = Math.floor(Math.random() * ChanceCards.length);
+                // const randomIndex = 14;
+                const card = ChanceCards[randomIndex];
+
+                card.action(player);
+
+                io.to(roomId).emit('game-log', `${player.name}님이 찬스 칸에 도착했습니다!`);
+
+                io.to(roomId).emit('showModalHandler-chance-card', {
+                    title: card.title,
+                    description: card.description,
+                    name: player.name
+                });
+        }
+        else if (pos === 23) {
+            const tax = 100;
+            const actualTax = Math.min(player.money, tax);
+            player.money -= actualTax;
+            room.taxPool += actualTax * 0.7;
+            io.to(roomId).emit('game-log', `💸 ${player.name}님 세금 ${actualTax * 0.7}(기금 70% / 세금 30%)만원 납부`);
+        }
+    }
+    function handleBankruptcy(io, socketId, room, roomId) {
     const player = room.players[socketId];
     io.to(roomId).emit('game-log', `📢 ${player.name}님이 파산하였습니다!`);
     
+    io.to(socketId).emit('player-bankrupt', socketId);
+
     // 땅 회수
     room.mapInfo.forEach(tile => {
         if (tile.owner === socketId) {
@@ -332,17 +340,23 @@ function handleBankruptcy(io, socketId, room, roomId) {
     if (room.playerOrder.length <= 1) {
         const winner = room.players[room.playerOrder[0]];
         io.to(roomId).emit('game-log', `🏆 최종 승리: ${winner ? winner.name : '없음'}`);
+        io.to(room.playerOrder[0]).emit('player-winner', room.playerOrder[0]);
+
         // 2초 뒤에 게임 리셋
         setTimeout(() => {
-            // resetGame(room);
+            console.log(`[${roomId}] 모든 인원 퇴장. 방 삭제`);
             
             // 모든 클라이언트에 초기화된 상태 방송
             io.to(roomId).emit('update-map', room.mapInfo);
             io.to(roomId).emit('update-players', room.players);
             io.to(roomId).emit('update-taxpool', room.taxPool);
             io.to(roomId).emit('turn-change', null);
+            delete rooms[roomId];
         }, 2000);
     } else {
         nextTurn(io, room, roomId);
     }
 }
+}
+
+
