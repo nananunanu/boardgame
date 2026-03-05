@@ -365,7 +365,7 @@ socket.on('room-list', (roomList) => {
             li.className = "room-item";
             li.innerHTML = `
                 <span class="room-info">🏠${room.title} (${room.playerCount} / ${room.maxPlayers})</span>
-                <button onclick="joinRoom(${roomId})">입장하기</button>
+                <button class="room-info-join-button" onclick="joinRoom(${roomId})">입장하기</button>
             `;
             roomUl.appendChild(li);
         }
