@@ -3,6 +3,8 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 
+const userRouter = require('./routes/user'); // 파일 불러오기
+
 const registerHandler = require(`./socket/gameHandler`); // 게임 관련 소켓 핸들러
 const { INITIAL_MAP } = require(`./constants/mapData`);
 const { resetGame, getPublicRooms } = require('./utils/gameUtils');
@@ -10,6 +12,10 @@ const { resetGame, getPublicRooms } = require('./utils/gameUtils');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+app.use(express.json()); // 반드시 라우터보다 위에 있어야 함!
+app.use('/api/user', userRouter); // '/api/user'라는 경로로 들어오는 건 다 userRouter가 처리함
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 const rooms = {}; // {"방번호": {players, mapInfo, taxPool ...}}
@@ -62,6 +68,7 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('turn-change', currentRoom.playerOrder[currentRoom.currentTurnIndex]);
         io.to(roomId).emit('update-map', currentRoom.mapInfo);
         io.to(roomId).emit('game-log', `📢 ${username}님이 입장하셨습니다.`);
+        
     });
     registerHandler(io, socket, rooms);
 });

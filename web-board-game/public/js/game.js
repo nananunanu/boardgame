@@ -7,14 +7,16 @@ const refreshBtn = document.getElementById('refresh-btn');
 const listTopBtn = document.getElementById('room-list-top-btn1');
 
 const canvas = document.getElementById('gameCanvas');
-
-
 import { Renderer } from './renderer.js';
 // import { Animator } from './animator.js';
 // import { UIManager } from './uiManager.js';
 
 const countButtons = document.querySelectorAll('.room-create-player-count');
 let selectedMaxPlayers = 0;
+let isPublic = false;
+let currentUser = null;
+
+
 countButtons.forEach(btn => {
     btn.onclick = () => {
         countButtons.forEach(b => b.style.backgroundColor = '#8b6673'); 
@@ -23,7 +25,6 @@ countButtons.forEach(btn => {
         };
 });
 const isPublicBtn = document.querySelectorAll('.room-create-public-private');
-let isPublic = false;
 isPublicBtn.forEach(btn => {
     btn.onclick = () => {
         isPublicBtn.forEach(b => b.style.backgroundColor = '#8b6673'); 
@@ -37,10 +38,10 @@ if ('serviceWorker' in navigator) {
         .then(() => console.log("서비스 워커 등록 완료"));
 }
 //시작버튼 클릭시
-document.getElementById('start-btn').onclick = function() {
-    document.getElementById('start-overlay').style.display = 'none';
-    document.getElementById('lobby-overlay').style.display = 'flex';
-};
+// document.getElementById('start-btn').onclick = function() {
+//     document.getElementById('start-overlay').style.display = 'none';
+//     document.getElementById('lobby-overlay').style.display = 'flex';
+// };
 // 방 생성 버튼
 document.getElementById('create-room-btn').onclick = () => {
     document.getElementById('room-list-container').style.display = 'none';
@@ -96,8 +97,12 @@ refreshBtn.onclick = () => {
 };
 window.joinRoom = function(roomId, roomTitle) {
     console.log(`${roomId}에 입장했습니다!`);
-    const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
-    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, myName);
+    // const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
+    if (!currentUser) {
+        alert("로그인이 필요합니다.");
+        return;
+    }
+    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, currentUser.nickname);
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
@@ -620,3 +625,99 @@ socket.on('player-winner', (targetId) => { //파산 로직
         rollBtn.disabled = DISABLE;
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+// 버튼 요소 가져오기
+const loginBtn = document.getElementById('login-btn');
+const registerBtn = document.getElementById('register-btn');
+const userIdInput = document.getElementById('user-id');
+const userPwInput = document.getElementById('user-pw');
+
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+
+// 창 전환 버튼들
+document.getElementById('open-register-btn').onclick = () => {
+    loginForm.style.display = 'none';
+    registerForm.style.display = 'flex';
+};
+
+document.getElementById('cancel-register-btn').onclick = () => {
+    registerForm.style.display = 'none';
+    loginForm.style.display = 'flex';
+};
+
+// 실제 회원가입 로직
+document.getElementById('do-register-btn').onclick = async () => {
+    const nickname = document.getElementById('reg-nickname').value;
+    const username = document.getElementById('reg-id').value;
+    const password = document.getElementById('reg-pw').value;
+    const passwordConfirm = document.getElementById('reg-pw-confirm').value;
+
+    // 1. 빈 칸 검사
+    if (!nickname || !username || !password || !passwordConfirm) {
+        return alert("모든 칸을 입력해주세요.");
+    }
+
+    // 2. 비밀번호 확인 검사
+    if (password !== passwordConfirm) {
+        return alert("비밀번호가 서로 일치하지 않습니다.");
+    }
+
+    // 3. 서버로 전송 (nickname 추가됨)
+    const response = await fetch('/api/user/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname, username, password })
+    });
+
+    if (response.ok) {
+        alert("회원가입이 완료되었습니다! 로그인해주세요.");
+        registerForm.style.display = 'none';
+        loginForm.style.display = 'flex';
+    } else {
+        const msg = await response.text();
+        alert(msg);
+    }
+};
+
+loginBtn.onclick = async () => {
+    const username = userIdInput.value;
+    const password = userPwInput.value;
+
+    if (!username || !password) return alert("아이디와 비밀번호를 입력해주세요.");
+
+    const response = await fetch('/api/user/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+
+    if (response.ok) {
+        currentUser = await response.json(); // 유저 정보 저장
+        alert(`${currentUser.nickname}님 환영합니다!`);
+        
+        document.getElementById('start-overlay').style.display = 'none';
+        document.getElementById('lobby-overlay').style.display = 'flex';
+    } else {
+        const errorMsg = await response.text();
+        alert(errorMsg);
+    }
+    //유저 게임머니 렌더링
+    const playerMoneyDisplay = document.getElementById('player-money');
+    if (currentUser) {
+        playerMoneyDisplay.innerText = `코인 갯수: ${currentUser.money || currentUser.game_money}`;
+    } else {
+        // 로그인 전이라면 기본 메시지나 공백 처리
+        playerMoneyDisplay.innerText = `로딩중`;
+    }
+};

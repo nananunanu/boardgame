@@ -19,10 +19,31 @@
 <body ontouchstart="">
     <div id="start-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #DAC6CC; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
         <div id="start-screen">
-            <p style="font-family: Bungee, sans-serif; font-size: 13vh;">WORLD IN BOARD</p>
-            <button id="start-btn" style="width: 200px; padding: 20px; background: #2ecc71; border: none; border-radius: 10px; font-size: 20px; color: white; cursor: pointer;">게임 시작</button>
-            <p style="margin-top: 15px; font-size: 14px; color: #aaa;">모바일은 가로 모드로 플레이하세요!</p>
+        <p style="font-family: Bungee, sans-serif; font-size: 8vh;">WORLD IN BOARD</p>
+        
+        <div id="login-form" style="display: flex; flex-direction: column; gap: 10px; width: 300px;">
+            <input type="text" id="user-id" placeholder="아이디" style="padding: 12px; border-radius: 5px; border: none;">
+            <input type="password" id="user-pw" placeholder="비밀번호" style="padding: 12px; border-radius: 5px; border: none;">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="login-btn" style="flex: 1; padding: 12px; background: #2ecc71; border: none; border-radius: 5px; color: white; cursor: pointer;">로그인</button>
+                <button id="open-register-btn" style="flex: 1; padding: 12px; background: #3498db; border: none; border-radius: 5px; color: white; cursor: pointer;">회원가입</button>
+            </div>
         </div>
+
+        <div id="register-form" style="display: none; flex-direction: column; gap: 8px; width: 300px; background: rgba(0,0,0,0.4); padding: 17px; border-radius: 15px;">
+            <h3 style="margin-top: 0;">새 계정 만들기</h3>
+            <input type="text" id="reg-nickname" placeholder="닉네임" style="padding: 10px; border-radius: 5px; border: none;">
+            <input type="text" id="reg-id" placeholder="아이디" style="padding: 10px; border-radius: 5px; border: none;">
+            <input type="password" id="reg-pw" placeholder="비밀번호" style="padding: 10px; border-radius: 5px; border: none;">
+            <input type="password" id="reg-pw-confirm" placeholder="비밀번호 확인" style="padding: 10px; border-radius: 5px; border: none;">
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="do-register-btn" style="flex: 1; padding: 8px; background: #e67e22; border: none; border-radius: 5px; color: white; cursor: pointer;">가입하기</button>
+                <button id="cancel-register-btn" style="flex: 1; padding: 8px; background: #95a5a6; border: none; border-radius: 5px; color: white; cursor: pointer;">취소</button>
+            </div>
+        </div>
+        <p style="margin-top: 20px; font-size: 14px; color: #666;">모바일은 가로 모드로 플레이하세요!</p>
+    </div>
     </div>
     <div id="lobby-overlay" style="display: none; flex-direction: column;">
         <div>
@@ -38,6 +59,7 @@
                 </div>
             </div>
             <div id="room-list-container" class="room-list-background">
+                <div id="player-money"></div>
                 <ul class="room-list" id="room-ul">
                 </ul>
             </div>
