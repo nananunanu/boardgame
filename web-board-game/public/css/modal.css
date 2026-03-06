@@ -70,7 +70,7 @@ html {
             top: 50px;
             left: 50px;
             padding: 15px 30px;
-            background: #3498db;
+            background: #3498db;           
             border: none;
             border-radius: 5px;
             color: white;
@@ -442,7 +442,23 @@ button {
     height: 80vh;
     overflow-y: auto;
 }
+#player-money {
+    color: white;
+    font-size: 1.7vw;
+    font-weight: 100;
+    background: rgba(0, 0, 0, 0.4);
+    width: 16vw;
+    height: 30px;
+    border-radius: 12px;
+    border: 0px;
 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#player-money p {
+    margin-left: 10px;
+}
 .room-list {
     list-style: none;
     padding: 10px;
@@ -518,6 +534,17 @@ button {
     border-radius: 14px;
     border: 1px solid #e0e4e9;
     width: 7vw;
+    height: 10vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.room-create-bet-money {
+    background-color: #8b6673;
+    border-radius: 14px;
+    border: 1px solid #e0e4e9;
+    width: 17.3vw;
     height: 10vh;
 
     display: flex;

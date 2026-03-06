@@ -1,58 +1,52 @@
 const socket = io();
 const statusText = document.getElementById('status');
 const turnText = document.getElementById('your-turn');
-const rollBtn = document.getElementById('roll-btn');
 const resultText = document.getElementById('result-textText');
-const refreshBtn = document.getElementById('refresh-btn');
-const listTopBtn = document.getElementById('room-list-top-btn1');
-
 const canvas = document.getElementById('gameCanvas');
-import { Renderer } from './renderer.js';
+const rollBtn = document.getElementById('roll-btn');
 
+const ENABLE = false;
+const DISABLE = true;
+
+import { Renderer } from './renderer.js';
 import { playSound } from './soundManager.js';
 // import { Animator } from './animator.js';
 // import { UIManager } from './uiManager.js';
-
-
-document.addEventListener('click', (event) => {
-    // 클릭된 요소가 버튼(BUTTON)인지 확인
-    if (event.target.tagName === 'BUTTON') {
-        playSound('button'); // 버튼 클릭 사운드 재생
-    }
-});
-
-const countButtons = document.querySelectorAll('.room-create-player-count');
 let selectedMaxPlayers = 0;
+let betMoney = 0;
 let isPublic = false;
 let currentUser = null;
-
-
-countButtons.forEach(btn => {
-    btn.onclick = () => {
-        countButtons.forEach(b => b.style.backgroundColor = '#8b6673'); 
-            btn.style.backgroundColor = '#c07891'; 
-            selectedMaxPlayers = parseInt(btn.getAttribute('data-value'));
-        };
-});
-const isPublicBtn = document.querySelectorAll('.room-create-public-private');
-isPublicBtn.forEach(btn => {
-    btn.onclick = () => {
-        isPublicBtn.forEach(b => b.style.backgroundColor = '#8b6673'); 
-            btn.style.backgroundColor = '#c07891'; 
-            isPublic = parseInt(btn.getAttribute('data-value'));
-        };
-});
 //PWA를 위한 코드
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
         .then(() => console.log("서비스 워커 등록 완료"));
 }
-//시작버튼 클릭시
-// document.getElementById('start-btn').onclick = function() {
-//     document.getElementById('start-overlay').style.display = 'none';
-//     document.getElementById('lobby-overlay').style.display = 'flex';
-// };
-// 방 생성 버튼
+document.addEventListener('click', (event) => {
+    if (event.target.tagName === 'BUTTON') {
+        playSound('button'); // 버튼 클릭 사운드 재생
+    }
+});
+document.querySelectorAll('.room-create-player-count').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.room-create-player-count').forEach(b => b.style.backgroundColor = '#8b6673'); 
+            btn.style.backgroundColor = '#c07891'; 
+            selectedMaxPlayers = parseInt(btn.getAttribute('data-value'));
+        };
+});
+document.querySelectorAll('.room-create-bet-money').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.room-create-bet-money').forEach(b => b.style.backgroundColor = '#8b6673'); 
+            btn.style.backgroundColor = '#c07891'; 
+            betMoney = parseInt(btn.getAttribute('data-value'));
+        };
+});
+document.querySelectorAll('.room-create-public-private').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.room-create-public-private').forEach(b => b.style.backgroundColor = '#8b6673'); 
+            btn.style.backgroundColor = '#c07891'; 
+            isPublic = parseInt(btn.getAttribute('data-value'));
+        };
+});
 document.getElementById('create-room-btn').onclick = () => {
     document.getElementById('room-list-container').style.display = 'none';
     document.getElementById('room-create-container').style.display = 'flex';
@@ -61,16 +55,9 @@ document.getElementById('spectator-mode-btn').onclick = () => {
     document.getElementById('bankruptcy-overlay').style.display = 'none';
     document.getElementById('game-leave-btn').style.display = 'flex';
 };
-
-listTopBtn.onclick = () => {
+document.getElementById('room-list-top-btn1').onclick = () => {
     appearList();
 };
-
-function appearList() {
-    document.getElementById('room-list-container').style.display = 'flex';
-    document.getElementById('room-list-container').style.flexDirection = 'column';
-    document.getElementById('room-create-container').style.display = 'none';
-}
 document.getElementById('confirm-create-btn').addEventListener('click', () => {
     const roomTitle = document.getElementById('room-create-title').value;
 
@@ -82,6 +69,10 @@ document.getElementById('confirm-create-btn').addEventListener('click', () => {
         alert("최대 인원 수를 선택해주세요!");
         return;
     }
+    if (betMoney === 0) {
+        alert("방 참가비를 선택해주세요!");
+        return;
+    }
     const roomId = Number(Math.floor(Math.random() * 9000 + 1000));
     // const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
     if (!roomId) return; // 취소 누르면 중단
@@ -91,20 +82,30 @@ document.getElementById('confirm-create-btn').addEventListener('click', () => {
    
 });
 // 새로고침 버튼
-refreshBtn.onclick = () => {
+document.getElementById('refresh-btn').onclick = () => {
     // 1. 버튼을 잠시 비활성화 (연타 방지)
-    refreshBtn.disabled = true;
-    refreshBtn.innerText = "🔄 갱신 중...";
+    document.getElementById('refresh-btn').disabled = true;
+    document.getElementById('refresh-btn').innerText = "🔄 갱신 중...";
 
     // 2. 서버에 목록 요청
     socket.emit('request-room-list');
 
     // 3. 1초 뒤에 버튼 다시 활성화 (또는 서버 응답 시 활성화)
     setTimeout(() => {
-        refreshBtn.disabled = false;
-        refreshBtn.innerText = "🔄 새로고침";
+        document.getElementById('refresh-btn').disabled = false;
+        document.getElementById('refresh-btn').innerText = "🔄 새로고침";
     }, 500);
 };
+rollBtn.onclick = () => {
+    rollBtn.disabled = DISABLE
+    socket.emit('roll-dice');
+};
+
+function appearList() {
+    document.getElementById('room-list-container').style.display = 'flex';
+    document.getElementById('room-list-container').style.flexDirection = 'column';
+    document.getElementById('room-create-container').style.display = 'none';
+}
 window.joinRoom = function(roomId, roomTitle) {
     console.log(`${roomId}에 입장했습니다!`);
     // const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
@@ -116,11 +117,7 @@ window.joinRoom = function(roomId, roomTitle) {
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
-// 주사위 버튼 이벤트
-rollBtn.onclick = () => {
-    rollBtn.disabled = DISABLE
-    socket.emit('roll-dice');
-};
+// 주사위 버튼 이벤트리스너
 canvas.addEventListener('click', (event) => {
     // 텔레포트 모드가 아니면 무시
     if (!state.isTeleporting) return;
@@ -217,9 +214,6 @@ const state = {
 state.images.villa.src = 'img/villa.png';
 // state.images.building.src = 'img/building.png';
 // state.images.hotel.src = 'img/hotel.png';
-
-const ENABLE = false;
-const DISABLE = true;
 
 // 이벤트 리스너 등록 및 초기 실행
 window.addEventListener('resize', () => {
@@ -746,7 +740,7 @@ loginBtn.onclick = async () => {
     //유저 게임머니 렌더링
     const playerMoneyDisplay = document.getElementById('player-money');
     if (currentUser) {
-        playerMoneyDisplay.innerText = `코인 갯수: ${currentUser.money || currentUser.game_money}`;
+        playerMoneyDisplay.innerHTML = `<p>코인 갯수: ${currentUser.money || currentUser.game_money}</p>`;
     } else {
         // 로그인 전이라면 기본 메시지나 공백 처리
         playerMoneyDisplay.innerText = `로딩중`;
