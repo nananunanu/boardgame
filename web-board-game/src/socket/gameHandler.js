@@ -31,7 +31,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
             return;
         }
 
-        // const diceValue = 1; // 테스트용 고정값
+        // const diceValue = 2; // 테스트용 고정값
         const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % room.mapInfo.length;
@@ -271,7 +271,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
         }
         // 3. 특수 칸 처리 (무인도, 사회복지, 국세청 등)
         else {
-            processSpecialTile(io, player, finalPos, room, roomId);
+            return processSpecialTile(io, player, finalPos, room, roomId);
         }
 
         io.to(roomId).emit('update-players', room.players);
@@ -301,11 +301,10 @@ module.exports = (io, socket, rooms, activeUsers) => {
         }
         else if (pos === 4 || pos === 18) {
                 const randomIndex = Math.floor(Math.random() * ChanceCards.length);
-                // const randomIndex = 14;
                 const card = ChanceCards[randomIndex];
+                // const card = ChanceCards[6]; // 테스트용 고정 카드
 
                 card.action(player);
-
                 io.to(roomId).emit('game-log', `${player.name}님이 찬스 칸에 도착했습니다!`);
 
                 io.to(roomId).emit('showModalHandler-chance-card', {
@@ -313,6 +312,17 @@ module.exports = (io, socket, rooms, activeUsers) => {
                     description: card.description,
                     name: player.name
                 });
+
+                // 2. 만약 카드로 인해 위치가 변경되었다면 (예: 세계일주, 이사 등)
+                // 서버 내부 함수를 직접 호출하여 도착지 로직을 수행합니다.
+                if (card.positionChange) {
+                    io.to(roomId).emit('update-players', room.players);
+                    handleMoveComplete(io, socket, player.position, room, roomId);
+                    
+                    // handleMoveComplete 내부에서 nextTurn을 호출하므로 여기서 중단
+                    return; 
+                }
+
         }
         else if (pos === 23) {
             const tax = 100;
@@ -321,6 +331,9 @@ module.exports = (io, socket, rooms, activeUsers) => {
             room.taxPool += actualTax * 0.7;
             io.to(roomId).emit('game-log', `💸 ${player.name}님 세금 ${actualTax * 0.7}(기금 70% / 세금 30%)만원 납부`);
         }
+        io.to(roomId).emit('update-players', room.players);
+        io.to(roomId).emit('update-taxpool', room.taxPool);
+        nextTurn(io, room, roomId);
     }
     function handleBankruptcy(io, socketId, room, roomId) {
     const player = room.players[socketId];
