@@ -181,7 +181,7 @@ export const Renderer = {
         });
     },
     drawMahjongTile(tile, info, index, state) {
-        const { ctx, TILE_W, TILE_H, players, currentTaxPool, isTeleporting } = state;
+        const { ctx, TILE_W, TILE_H, players, currentTaxPool, isTeleporting, images } = state;
         const chanceTileColor = "#f39c12";
         const chanceTileSideColor = "#c57f0e";
 
@@ -301,8 +301,8 @@ export const Renderer = {
         ctx.stroke();
 
         
-            // 3. 건물 표시 (Isometric 형태 - 타일 등각투영 축에 맞춰 배치)
-            // buildingLevel: 0 none, 1 별장, 2 빌라, 3 호텔
+        // buildingLevel: 0 none, 1 별장, 2 빌라, 3 호텔
+        // 3. 건물 표시 (Isometric 형태 - 타일 등각투영 축에 맞춰 배치)
             if (info.buildingLevel && info.buildingLevel > 0) {
                 const n = Math.min(info.buildingLevel, 3);
                 const buildingW = TILE_W * 0.28;
@@ -389,7 +389,34 @@ export const Renderer = {
                     ctx.stroke();
                 }
             }
+            //이미지를 건물로 추가 로직 (기존의 간단한 도형 대신 단계별 이미지로 표현) 이미지 넣으면 위 로직이랑 바꾸기
+            // if (info.buildingLevel && info.buildingLevel > 0) {
+            //     const n = Math.min(info.buildingLevel, 3);
+            //     const imgW = TILE_W * 0.45; // 타일 크기에 맞게 조절
+            //     const imgH = imgW; 
 
+            //     // 배치 기준점 (타일 중앙 상단)
+            //     const topX = tile.x + TILE_W / 2;
+            //     const topY = tile.y + TILE_H * 0.25;
+
+            //     for (let i = 0; i < n; i++) {
+            //         const factor = i - (n - 1) / 2;
+            //         const dx = (imgW * 0.5) * factor; // 건물 간 간격
+            //         const bx = topX + dx;
+            //         const by = topY + (dx * (TILE_H / TILE_W)); // Isometric 기울기 보정
+
+            //         // state.images에서 단계별 이미지 선택
+            //         let img;
+            //         if (i === 0) img = images.villa;
+            //         else if (i === 1) img = images.building;
+            //         else img = images.hotel;
+
+            //         // 이미지가 로드된 경우에만 그리기
+            //         if (img.complete) {
+            //             ctx.drawImage(img, bx - imgW / 2, by - imgH, imgW, imgH);
+            //         }
+            //     }
+            // }
         // 3. 내부 텍스트 및 정보
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
