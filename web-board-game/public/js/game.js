@@ -279,7 +279,7 @@ function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 
         const nextIdx = (startIdx + 1) % state.mapData.length;
         const from = state.mapData[startIdx];
         const to = state.mapData[nextIdx];
-        const frames = 20; // 점프속도 조절
+        const frames = 30; // 점프속도 조절
         let frame = 0;
 
         function animate() {
