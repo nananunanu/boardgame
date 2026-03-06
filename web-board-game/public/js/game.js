@@ -8,8 +8,18 @@ const listTopBtn = document.getElementById('room-list-top-btn1');
 
 const canvas = document.getElementById('gameCanvas');
 import { Renderer } from './renderer.js';
+
+import { playSound } from './soundManager.js';
 // import { Animator } from './animator.js';
 // import { UIManager } from './uiManager.js';
+
+
+document.addEventListener('click', (event) => {
+    // 클릭된 요소가 버튼(BUTTON)인지 확인
+    if (event.target.tagName === 'BUTTON') {
+        playSound('button'); // 버튼 클릭 사운드 재생
+    }
+});
 
 const countButtons = document.querySelectorAll('.room-create-player-count');
 let selectedMaxPlayers = 0;
