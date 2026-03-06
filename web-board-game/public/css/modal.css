@@ -54,7 +54,10 @@ html {
 
             outline: none;
         }
-
+        button {
+            font-family: 'Pretendard', sans-serif;
+            color: white;
+        }
         #game-container { position: relative; display: flex; align-items: center; justify-content: center; }
 
         canvas { 
