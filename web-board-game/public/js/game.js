@@ -195,8 +195,19 @@ const state = {
     // 5. 플레이어 조작 및 상태값
     currentTurnId: "",    // 현재 누구의 턴인지 (socket.id)
     isMoving: false,      // 캐릭터 이동 애니메이션 중인지 여부
-    isTeleporting: false  // 세계여행(텔레포트) 선택 모드인지 여부
+    isTeleporting: false,  // 세계여행(텔레포트) 선택 모드인지 여부
+    
+    images: {
+        villa: new Image(),
+        // building: new Image(),
+        // hotel: new Image()
+    }
 };
+
+state.images.villa.src = 'img/villa.png';
+// state.images.building.src = 'img/building.png';
+// state.images.hotel.src = 'img/hotel.png';
+
 const ENABLE = false;
 const DISABLE = true;
 

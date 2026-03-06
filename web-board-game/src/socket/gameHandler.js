@@ -31,8 +31,8 @@ module.exports = (io, socket, rooms, activeUsers) => {
             return;
         }
 
-        const diceValue = 1; // 테스트용 고정값
-        // const diceValue = Math.floor(Math.random() * 6) + 1;
+        // const diceValue = 1; // 테스트용 고정값
+        const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % room.mapInfo.length;
 
@@ -181,8 +181,8 @@ module.exports = (io, socket, rooms, activeUsers) => {
         if (land.type === 'land' && land.owner && land.owner !== socket.id) {
             const owner = room.players[land.owner];
             const baseFee = Math.floor(land.price * 0.4);
-            // const fee = baseFee * [1, 2, 4, 6][land.buildingLevel];
-            const fee = 1000; //테스트용 고정값
+            const fee = baseFee * [1, 2, 4, 6][land.buildingLevel];
+            // const fee = 1000; //테스트용 고정값
 
             if (player.money >= fee && player.freePass > 0) {
                 player.freePass -= 1;
