@@ -314,8 +314,20 @@ button {
     cursor: pointer;
     font-weight: bold;
 }
-#modal-confirm-btn { background: #c7728b; color: white; }
-#modal-cancel-btn { background: #d6b9c2; color: white; }
+#modal-confirm-btn { 
+    background: #c7728b; 
+    color: white;
+
+    border-radius: 12px;
+    padding: 5px 15px;
+}
+#modal-cancel-btn { 
+    background: #d6b9c2;
+    color: white; 
+
+    border-radius: 12px;
+    padding: 5px 15px;
+}
 
 
 /* =============================================================================== - 찬스카드 디자인*/
@@ -453,12 +465,10 @@ button {
     border: 0px;
 
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
-#player-money p {
-    margin-left: 10px;
-}
+
 .room-list {
     list-style: none;
     padding: 10px;
@@ -466,6 +476,27 @@ button {
     display: flex;
     flex-direction: column;
     gap: 5px; /* 카드 사이의 간격 */
+}
+.room-info {
+    display: flex;
+    gap: 10px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.room-info-betMoney {
+    color: white;
+    background: rgb(235, 207, 84);
+    width: auto;
+    height: auto;
+    padding: 5px 10px 5px 10px;
+    border-radius: 12px;
+    border: 0px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* 네이버 스타일 카드 아이템 */

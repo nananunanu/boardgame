@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
         activeUsers[username] = socket.id;
         socket.username = username;
     });
-    socket.on('join-game', (roomId, roomTitle, selectedMaxPlayers, username) => {
+    socket.on('join-game', (roomId, roomTitle, selectedMaxPlayers, username, betMoney) => {
         if (!roomId || !username) return;
         if (rooms[roomId] && Object.keys(rooms[roomId].players).length >= rooms[roomId].maxPlayers) {
             socket.emit('room-list', getPublicRooms(rooms));
@@ -52,6 +52,7 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 title: roomTitle,
+                betMoney: betMoney,
                 maxPlayers: selectedMaxPlayers,
                 ownerName: username,
                 players: {},

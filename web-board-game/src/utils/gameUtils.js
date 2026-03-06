@@ -40,6 +40,7 @@ function getPublicRooms(rooms) {
     for (const id in rooms) {
         list.push({
             title: rooms[id].title,
+            betMoney: rooms[id].betMoney,
             maxPlayers: rooms[id].maxPlayers,
             ownerName: rooms[id].ownerName,
             roomId: id,

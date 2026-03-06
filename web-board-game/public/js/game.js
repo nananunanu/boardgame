@@ -76,7 +76,7 @@ document.getElementById('confirm-create-btn').addEventListener('click', () => {
     const roomId = Number(Math.floor(Math.random() * 9000 + 1000));
     // const roomId = prompt("생성할 방 번호를 입력하세요 (숫자/문자)", Math.floor(Math.random() * 9000 + 1000));
     if (!roomId) return; // 취소 누르면 중단
-    if (roomId) joinRoom(roomId, roomTitle);
+    if (roomId) joinRoom(roomId, roomTitle, betMoney);
 
     alert(`${roomTitle} 방이 생성되었습니다!`);
    
@@ -106,14 +106,14 @@ function appearList() {
     document.getElementById('room-list-container').style.flexDirection = 'column';
     document.getElementById('room-create-container').style.display = 'none';
 }
-window.joinRoom = function(roomId, roomTitle) {
+window.joinRoom = function(roomId, roomTitle, betMoney) {
     console.log(`${roomId}에 입장했습니다!`);
     // const myName = prompt("사용할 닉네임을 입력하세요", "Player") || "익명";
     if (!currentUser) {
         alert("로그인이 필요합니다.");
         return;
     }
-    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, currentUser.nickname);
+    socket.emit('join-game', roomId, roomTitle, selectedMaxPlayers, currentUser.nickname, betMoney);
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
@@ -194,7 +194,7 @@ const state = {
         showResult: false, // 결과 주사위를 화면에 유지할지 여부
         value: 1,          // 주사위 눈금
         frame: 0,
-        maxFrame: 40,
+        maxFrame: 60,
         yOffset: 0,        // 점프 높이
         rotation: 0        // 회전 각도
     },
@@ -283,7 +283,7 @@ function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 
         const nextIdx = (startIdx + 1) % state.mapData.length;
         const from = state.mapData[startIdx];
         const to = state.mapData[nextIdx];
-        const frames = 30; // 점프속도 조절
+        const frames = 60; // 점프속도 조절
         let frame = 0;
 
         function animate() {
@@ -293,7 +293,7 @@ function moveOneStep(playerId) { // socket "dice-result"에서 유저 움직임 
             player.animX = from.x + (to.x - from.x) * t;
             player.animY = from.y + (to.y - from.y) * t;
             // 점프 곡선
-            player.animOffset = Math.sin(t * Math.PI) * Math.min(state.TILE_W, state.TILE_H) * 0.5; // 높이조정 상수
+            player.animOffset = Math.sin(t * Math.PI) * Math.min(state.TILE_W, state.TILE_H) * 0.7; // 높이조정 상수
 
             Renderer.renderAll(state);
             if (frame < frames) {
@@ -407,7 +407,11 @@ socket.on('room-list', (roomList) => {
         if (room.playerCount < room.maxPlayers) {
             li.className = "room-item";
             li.innerHTML = `
-                <span class="room-info">🏠${room.title} (${room.playerCount} / ${room.maxPlayers}) : ${room.ownerName}</span>
+                <div class="room-info">
+                    <div>🏠${room.title} (${room.playerCount} / ${room.maxPlayers})</div> 
+                    <div class="room-info-betMoney">${room.betMoney}</div>
+                    <div>: ${room.ownerName}</div>
+                </div>
                 <button class="room-info-join-button" onclick="joinRoom(${roomId})">입장하기</button>
             `;
             roomUl.appendChild(li);
