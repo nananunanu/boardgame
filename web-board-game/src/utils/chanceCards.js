@@ -46,14 +46,14 @@ const ChanceCards = [
         title: "💸 사회복지기금 배당",
         description: "사회복지기구로 가세요.",
         positionChange: true,
-        action: (player) => { player.position = 14; }
+        action: (player) => { player.position = 0; }
     },    
     {
         id: 8,
         title: "✈️ 세계일주 티켓",
         description: "즉시 세계일주 칸으로 이동합니다.",
         positionChange: true,
-        action: (player) => { player.position = 21; }
+        action: (player) => { player.position = 8; }
     },
     {
         id: 9,
@@ -81,21 +81,21 @@ const ChanceCards = [
         title: "무인도",
         description: "폭풍을 만났습니다. 무인도로 이동합니다.",
         positionChange: true,
-        action: (player) => { player.position = 7; player.lockedTurns = 3; }
+        action: (player) => { player.position = 24; }
     },
     {
         id: 13,
         title: "관광여행",
-        description: "부산으로 이동합니다. (부산 소유주에게 통행료를 지불합니다.)",
+        description: "독도로 이동합니다. (독도 소유주에게 통행료를 지불합니다.)",
         positionChange: true,
-        action: (player) => { player.position = 15; }
+        action: (player) => { player.position = 27; }
     },
     {
         id: 14,
         title: "관광여행",
         description: "서울로 이동합니다. (서울 소유주에게 통행료를 지불합니다.)",
         positionChange: true,
-        action: (player) => { player.position = 27; }
+        action: (player) => { player.position = 15; }
     },
     {
         id: 15,

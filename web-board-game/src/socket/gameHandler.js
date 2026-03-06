@@ -44,7 +44,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
         //     io.to(roomId).emit('game-log', `💰 ${player.name}님이 월급 200만원을 받았습니다!`);
         // }
         const MAP_LENGTH = room.mapInfo.length; // 28
-        const START_INDEX = 14; // 출발지 인덱스
+        const START_INDEX = 16; // 출발지 인덱스
 
         // 1. 이동 전 위치(oldPos)에서 주사위(diceValue)만큼 더했을 때 START_INDEX를 '지나가는지' 체크
         // % MAP_LENGTH를 하지 않은 순수 이동 거리값으로 계산하는 것이 가장 정확합니다.
@@ -104,7 +104,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
         const activeId = room.playerOrder[room.currentTurnIndex];
 
         // 검증: 플레이어가 존재하고, 현재 자기 턴이며, 세계일주 칸에 있는지 확인
-        if (player && socket.id === activeId && player.position === 7) {
+        if (player && socket.id === activeId && player.position === 8) {
             
             // 1. 상태 업데이트
             player.position = targetIndex;
@@ -293,7 +293,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
     }
 
     function processSpecialTile(io, player, pos, room, roomId) {
-        if (pos === 21) {
+        if (pos === 24) {
             if (player.lockedTurnsPass > 0) {
                 player.lockedTurnsPass -= 1;
                 io.to(roomId).emit('game-log', `🏝️ ${player.name}님이 무인도 탈출권을 사용하여 탈출했습니다.`);
@@ -308,11 +308,11 @@ module.exports = (io, socket, rooms, activeUsers) => {
             io.to(roomId).emit('game-log', `🎉 ${player.name}님 기금 ${room.taxPool}만원 수령!`);
             room.taxPool = 0;
         }
-        else if (pos === 7) {
+        else if (pos === 8) {
                 player.isTeleportPending = true; // 세계일주 대기 상태 설정
                 io.to(roomId).emit('game-log', `✈️ ${player.name}님이 세계일주 칸에 도착했습니다!`);
         }
-        else if (pos === 4 || pos === 18) {
+        else if (pos === 4 || pos === 20 || pos === 29) {
                 const randomIndex = Math.floor(Math.random() * ChanceCards.length);
                 const card = ChanceCards[randomIndex];
                 // const card = ChanceCards[6]; // 테스트용 고정 카드
@@ -337,7 +337,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
                 }
 
         }
-        else if (pos === 9) {
+        else if (pos === 10) {
             const tax = 100;
             const actualTax = Math.min(player.money, tax);
             player.money -= actualTax;

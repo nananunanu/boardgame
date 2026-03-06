@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
         currentRoom.players[socket.id] = {
             id: socket.id,
             name: username,
-            position: 14,
+            position: 16,
             color: color,
             money: 400,
             lockedTurns: 0,

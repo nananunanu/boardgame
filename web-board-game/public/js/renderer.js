@@ -233,19 +233,19 @@ export const Renderer = {
         ctx.fill();
 
         // 1. 블록 옆면 (입체 두께) - 먼저 그려야 상판에 가려짐
-        if (index === 4 || index === 18) { // 찬스카드 칸은 특별한 색상
+        if (index === 4 || index === 20 || index === 29) { // 찬스카드 칸은 특별한 색상
             ctx.fillStyle = chanceTileSideColor;
         }
-        else if (index === 21) { // 무인도 칸은 특별한 색상
+        else if (index === 24) { // 무인도 칸은 특별한 색상
             ctx.fillStyle = islandTileSideColor;
         }
         else if (index === 0) { // 웰 칸은 특별한 색상
             ctx.fillStyle = wellTileSideColor;
         }
-        else if (index === 7) { // 세계일주 칸은 특별한 색상   
+        else if (index === 8) { // 세계일주 칸은 특별한 색상   
             ctx.fillStyle = airplaneTileSideColor;
         }
-        else if (index === 9) { // 세금 칸은 특별한 색상
+        else if (index === 10) { // 세금 칸은 특별한 색상
             ctx.fillStyle = taxPoolTileSideColor;
         }
         else {
@@ -268,19 +268,19 @@ export const Renderer = {
         if (info.owner && players[info.owner]) {
             ctx.fillStyle = players[info.owner].color;
         }
-        else if (index === 4 || index === 18) { // 찬스카드 칸은 특별한 색상
+        else if (index === 4 || index === 20 || index === 29) { // 찬스카드 칸은 특별한 색상
             ctx.fillStyle = chanceTileColor;
         }
-        else if (index === 21) { // 무인도 칸은 특별한 색상
+        else if (index === 24) { // 무인도 칸은 특별한 색상
             ctx.fillStyle = islandTileColor;
         }
         else if (index === 0) { // 웰 칸은 특별한 색상
             ctx.fillStyle = wellTileColor;
         }
-        else if (index === 7) { // 세계일주 칸은 특별한 색상   
+        else if (index === 8) { // 세계일주 칸은 특별한 색상   
             ctx.fillStyle = airplaneTileColor;
         }
-        else if (index === 9) { // 세금 칸은 특별한 색상
+        else if (index === 10) { // 세금 칸은 특별한 색상
             ctx.fillStyle = taxPoolTileColor;
         }
         else {
@@ -423,10 +423,10 @@ export const Renderer = {
 
         // 세계일주(17), 무인도(6), 기금(11), 세금(18) 등 특수 아이콘/텍스트 처리
         let title = info.name;
-        if (index === 14) title = "🚩 " + title; //출발지
-        if (index === 21) title = "🏝️ " + title; // 무인도 
-        if (index === 7) title = "✈️ " + title; // 세계여행
-        if (index === 9) title = "💸 " + title; // 세금
+        if (index === 16) title = "🚩 " + title; //출발지
+        if (index === 24) title = "🏝️ " + title; // 무인도 
+        if (index === 8) title = "✈️ " + title; // 세계여행
+        if (index === 10) title = "💸 " + title; // 세금
 
         ctx.fillStyle = "#2c3e50";
         ctx.font = `bold ${Math.floor(TILE_H * tileNameFontSize)}px sans-serif`;
@@ -449,7 +449,7 @@ export const Renderer = {
             ctx.font = `bold ${Math.floor(TILE_H * 0.26)}px sans-serif`;
             ctx.fillText(`${currentTaxPool}만`, centerX, centerY + TILE_H * 0.2);
         }
-        if (index === 9) {
+        if (index === 10) {
             ctx.fillStyle = "#f0dbd8";
             ctx.font = `bold ${Math.floor(TILE_H * 0.26)}px sans-serif`;
             ctx.fillText(`50만`, centerX, centerY + TILE_H * 0.2);

@@ -177,8 +177,8 @@ const state = {
     ctx: document.getElementById('gameCanvas').getContext('2d'),
 
     // 2. 맵 레이아웃 설정
-    COL_COUNT: 8,      // 가로 칸 수
-    ROW_COUNT: 8,      // 세로 칸 수 (필요시)
+    COL_COUNT: 9,      // 가로 칸 수
+    ROW_COUNT: 9,      // 세로 칸 수 (필요시)
     TILE_W: 0,         // Renderer.resizeCanvas()에서 계산됨 동적으로 계산될 가로높이
     TILE_H: 0,         // Renderer.resizeCanvas()에서 계산됨 동적으로 계산될 세로높이
     mapData: [],       // 타일의 x, y 좌표들이 저장될 배열
