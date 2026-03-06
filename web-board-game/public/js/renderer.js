@@ -538,7 +538,7 @@ export const Renderer = {
         // centerX에서 가로 폭의 절반을 빼지 않고, 
         // 다이아몬드 꼭짓점 기준 좌표계로 다시 잡습니다.
         const startX = centerX; 
-        const startY = centerY - (totalMapHeight / 2) - 13; //세로 위치조정 상수 +는 내림 -는 올림
+        const startY = centerY - (totalMapHeight / 2) - 9; //세로 위치조정 상수 +는 내림 -는 올림
 
         const stepX = TILE_W / 2;
         const stepY = TILE_H / 2;
