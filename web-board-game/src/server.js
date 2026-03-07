@@ -86,11 +86,6 @@ io.on('connection', (socket) => {
     socket.emit('room-list', getPublicRooms(rooms));
     registerHandler(io, socket, rooms, activeUsers);
 });
-// const PORT = 8080;
-
-// server.listen(PORT, () => {
-//     console.log(`Server is running on http://localhost:${PORT}`);
-// });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => { // '0.0.0.0'을 붙여 외부 접속을 허용합니다.

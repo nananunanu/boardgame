@@ -117,7 +117,7 @@ window.joinRoom = function(roomId, roomTitle, betMoney) {
     document.getElementById('lobby-overlay').style.display = 'none';
     document.getElementById('start-overlay').style.display = 'none';
 };
-// 주사위 버튼 이벤트리스너
+// 세계여행 클릭 리스너
 canvas.addEventListener('click', (event) => {
     // 텔레포트 모드가 아니면 무시
     if (!state.isTeleporting) return;

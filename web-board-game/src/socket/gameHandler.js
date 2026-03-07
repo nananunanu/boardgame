@@ -31,8 +31,8 @@ module.exports = (io, socket, rooms, activeUsers) => {
             return;
         }
 
-        // const diceValue = 2; // 테스트용 고정값
-        const diceValue = Math.floor(Math.random() * 6) + 1;
+        const diceValue = 24; // 테스트용 고정값
+        // const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % room.mapInfo.length;
 
@@ -43,7 +43,7 @@ module.exports = (io, socket, rooms, activeUsers) => {
         //     player.money += 200;
         //     io.to(roomId).emit('game-log', `💰 ${player.name}님이 월급 200만원을 받았습니다!`);
         // }
-        const MAP_LENGTH = room.mapInfo.length; // 28
+        const MAP_LENGTH = room.mapInfo.length;
         const START_INDEX = 16; // 출발지 인덱스
 
         // 1. 이동 전 위치(oldPos)에서 주사위(diceValue)만큼 더했을 때 START_INDEX를 '지나가는지' 체크
@@ -109,6 +109,10 @@ module.exports = (io, socket, rooms, activeUsers) => {
             // 1. 상태 업데이트
             player.position = targetIndex;
             player.isTeleportPending = false; // 대기 상태 해제
+            if (targetIndex >= 16 || targetIndex < 8) {
+                player.money += 200;
+                io.to(roomId).emit('game-log', `💰 ${player.name}님이 출발지를 통과하여 월급 200만원을 받았습니다!`);
+            }
 
             // 2. 로그 알림
             const targetName = room.mapInfo[targetIndex].name;
