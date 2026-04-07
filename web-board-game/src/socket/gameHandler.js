@@ -31,8 +31,8 @@ module.exports = (io, socket, rooms, activeUsers) => {
             return;
         }
 
-        const diceValue = 24; // 테스트용 고정값
-        // const diceValue = Math.floor(Math.random() * 6) + 1;
+        // const diceValue = 24; // 테스트용 고정값
+        const diceValue = Math.floor(Math.random() * 6) + 1;
         const oldPos = player.position;
         const newPos = (oldPos + diceValue) % room.mapInfo.length;
 
